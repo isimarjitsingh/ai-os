@@ -7,7 +7,8 @@ from agents.research import research_agent
 from agents.finance import finance_agent
 from agents.marketing import marketing_agent
 from agents.coding import coding_agent
-from graphs.routes import route_after_ceo,route_after_research,route_after_marketing,route_after_finance,route_after_coding
+from agents.file_generator import file_generator_agent
+from graphs.routes import route_after_ceo,route_after_research,route_after_marketing,route_after_finance
 
 
 builder=StateGraph(CompanyState)
@@ -17,6 +18,7 @@ builder.add_node('research',research_agent)
 builder.add_node('finance',finance_agent)
 builder.add_node('marketing',marketing_agent)
 builder.add_node('coding',coding_agent)
+builder.add_node('file_generator',file_generator_agent)
 builder.add_node('ceo_finalize',ceo_finalize)
 
 builder.add_edge(START,'ceo_initialize')
@@ -37,9 +39,10 @@ builder.add_conditional_edges(
     route_after_finance
 )
 
-builder.add_conditional_edges(
+builder.add_edge(
     "coding",
-    route_after_coding
+    "file_generator"
 )
+builder.add_edge("file_generator", "ceo_finalize")
 builder.add_edge('ceo_finalize',END)
 

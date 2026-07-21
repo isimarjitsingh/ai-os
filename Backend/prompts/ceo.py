@@ -43,7 +43,12 @@ Finance Output
 Coding Output
 
 {coding_report}
+Project Generated Successfully
+
+Project Name:
+{generated_project}
 """
+
         )
     ]
 )

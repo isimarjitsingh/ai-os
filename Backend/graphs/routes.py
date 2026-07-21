@@ -57,8 +57,3 @@ def route_after_finance(state: CompanyState):
         return "coding"
 
     return "ceo_finalize"
-
-
-def route_after_coding(state: CompanyState):
-
-    return "ceo_finalize"

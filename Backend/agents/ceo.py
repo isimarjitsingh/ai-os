@@ -3,6 +3,7 @@ from prompts.ceo import CEO_FINAL_PROMPT
 from prompts.ceo_planner import CEO_PLANNER_PROMPT
 from schemas.execution_plan import ExecutionPlan
 from state.company_state import CompanyState
+
 from orchestrator.planner import resolve_execution_plan
 from schemas.ceo import CEOFinalOutput
 
@@ -48,6 +49,7 @@ def ceo_finalize(state: CompanyState):
             "marketing_report": state["marketing_report"],
             "finance_report": state["finance_report"],
             "coding_report": state["coding_report"],
+            "generated_project": state["generated_project"]
         }
     )
 

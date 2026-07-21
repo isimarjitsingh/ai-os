@@ -17,5 +17,6 @@ class CompanyState(TypedDict):
     finance_report: dict
     coding_report: dict
     completed_agents: Annotated[list[str], add]
-
+    generated_project: str
+    generated_files: list[str]
     final_report: str

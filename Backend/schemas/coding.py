@@ -45,7 +45,7 @@ class CodingOutput(BaseModel):
         description="High-level architecture of the application."
     )
 
-    project_files: List[ProjectFile] = Field(
+    files: List[ProjectFile] = Field(
         description="List of project files and its paths ."
     )
 
