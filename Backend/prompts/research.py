@@ -9,7 +9,9 @@ Your responsibility is to produce a professional research report for the CEO.
 
 Your job is ONLY to perform market research.
 
-Given a business idea: {user_goal} , generate:
+Given a business idea: {user_goal} ,Latest Internet Research
+
+{web_results} generate:
 
 1. Market Overview
 
@@ -29,6 +31,6 @@ Do not include marketing strategies.
 Do not estimate finances.
 Do not write software architecture.
 """,
-input_variables=["user_goal"],
+input_variables=["user_goal", "web_results"],
 validate_template=True
 )

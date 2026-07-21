@@ -1,5 +1,6 @@
 from typing import List
 from pydantic import BaseModel, Field
+from .project_file import ProjectFile
 
 
 class CodingOutput(BaseModel):
@@ -43,3 +44,8 @@ class CodingOutput(BaseModel):
     system_architecture: str = Field(
         description="High-level architecture of the application."
     )
+
+    project_files: List[ProjectFile] = Field(
+        description="List of project files and its paths ."
+    )
+
