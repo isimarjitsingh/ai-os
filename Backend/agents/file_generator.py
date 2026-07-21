@@ -3,41 +3,34 @@ from llm import llm
 from prompts.file_generator import FILE_GENERATOR_PROMPT
 from tools.file_writer import file_writer
 from state.company_state import CompanyState
+from schemas.coding import CodingOutput
+from services.context_builder import build_context
 
 chain = FILE_GENERATOR_PROMPT | llm
 
 
 def file_generator_agent(state: CompanyState):
 
-    coding_report = state["coding_report"]
+    coding_report = CodingOutput.model_validate(
+        state["coding_report"]
+    )
 
-    project_name = coding_report["project_name"]
-
-    tech_stack = ", ".join(coding_report["tech_stack"])
-
-    system_architecture = coding_report["system_architecture"]
-
-    core_features = ", ".join(coding_report["core_features"])
+    project_name = coding_report.project_name
 
     generated_files = []
 
-    for file in coding_report["files"]:
+    for file in coding_report.files:
 
-        response = chain.invoke(
-            {
-                "project_name": project_name,
-                "tech_stack": tech_stack,
-                "system_architecture": system_architecture,
-                "core_features": core_features,
-                "file_path": file["path"],
-                "description": file["description"],
-                "purpose": file["purpose"]
-            }
+        context = build_context(
+            coding_report,
+            file
         )
+
+        response = chain.invoke(context)
 
         file_path = file_writer.write_file(
             project_name=project_name,
-            file_path=file["path"],
+            file_path=file.path,
             content=response.content
         )
 

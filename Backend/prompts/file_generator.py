@@ -4,17 +4,26 @@ FILE_GENERATOR_PROMPT = PromptTemplate(
     input_variables=[
         "project_name",
         "tech_stack",
-        "purpose",
+        "architecture",
         "system_architecture",
         "core_features",
+        "api_endpoints",
+        "development_steps",
+        "all_files",
         "file_path",
+        "category",
+        "purpose",
         "description",
-        
     ],
+
     template="""
 You are a Senior Software Engineer.
 
-You are generating ONE file for a software project.
+You are generating ONE file of a larger software project.
+
+========================
+PROJECT
+========================
 
 Project Name:
 {project_name}
@@ -22,29 +31,67 @@ Project Name:
 Tech Stack:
 {tech_stack}
 
+Architecture:
+{architecture}
+
 System Architecture:
 {system_architecture}
 
-Core Features:
+========================
+CORE FEATURES
+========================
+
 {core_features}
 
-Current File:
+========================
+API ENDPOINTS
+========================
+
+{api_endpoints}
+
+========================
+DEVELOPMENT ROADMAP
+========================
+
+{development_steps}
+
+========================
+PROJECT FILE STRUCTURE
+========================
+
+{all_files}
+
+========================
+CURRENT FILE
+========================
+
+Path:
 {file_path}
 
-description:
-{description}
+Category:
+{category}
 
-purpose:
+Purpose:
 {purpose}
 
-Generate the complete production-ready implementation for this file.
+Description:
+{description}
 
-The code should be clean, modular, and consistent with the provided project architecture.
+========================
+
+Generate ONLY this file.
+
+The generated code should:
+
+- Follow the chosen architecture.
+- Match the project structure.
+- Be production ready.
+- Use clean coding practices.
+- Include imports where necessary.
+- Be compatible with the rest of the project.
 
 Return ONLY the file content.
 
-Do not explain anything.
-
-Do not wrap the output inside markdown code fences.
+Do NOT wrap inside markdown.
 """
 )

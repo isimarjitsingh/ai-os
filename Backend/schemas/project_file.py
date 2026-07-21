@@ -4,3 +4,4 @@ class ProjectFile(BaseModel):
     path: str=Field(description="Tells the path of the files liek where they wold exist or need to create")
     purpose: str=Field(description="Tells why we develooping this file")
     description: str=Field(description="tells what types fetures need to build in this file")
+    category: str=Field(description="Category of the file (e.g., frontend, backend, database, etc.)")
