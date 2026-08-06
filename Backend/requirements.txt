@@ -1,6 +1,66 @@
-langchain-groq
-langchain
-langgraph>=0.2.0
-langchain-core
-langchain-google-genai
+# ===========================
+# Core Backend
+# ===========================
+fastapi
+uvicorn[standard]
 python-dotenv
+
+# ===========================
+# LangChain
+# ===========================
+langchain
+langchain-core
+langchain-community
+langgraph
+langgraph-checkpoint
+langgraph-checkpoint-redis
+
+# ===========================
+# Google Gemini
+# ===========================
+langchain-google-genai
+
+# ===========================
+# Tavily Search
+# ===========================
+langchain-tavily
+
+# ===========================
+# Redis
+# ===========================
+redis
+
+# ===========================
+# Database
+# ===========================
+sqlalchemy
+psycopg2-binary
+
+# ===========================
+# Validation
+# ===========================
+pydantic
+
+# ===========================
+# File Handling
+# ===========================
+aiofiles
+
+# ===========================
+# Utilities
+# ===========================
+
+typing_extensions
+
+# ===========================
+# HTTP
+# ===========================
+httpx
+
+# ===========================
+# Multipart (future file uploads)
+# ===========================
+python-multipart
+
+
+sse-starlette
