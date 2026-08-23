@@ -5,45 +5,45 @@ from pydantic import BaseModel, Field
 class CEOFinalOutput(BaseModel):
 
     project_name: str = Field(
-        description="Suggested name of the business or product."
+        description="Final recommended name of the business or product."
     )
 
     executive_summary: str = Field(
-        description="Overall summary of the business idea and execution plan."
+        description="Concise executive summary of the business idea, findings, and recommended direction."
     )
 
     business_viability: str = Field(
-        description="CEO's assessment of whether the business is worth pursuing."
+        description="CEO assessment of whether the business is commercially viable and why."
     )
 
     target_market: str = Field(
-        description="Primary customer segment."
+        description="Primary target customer segment and market."
     )
 
     unique_value_proposition: str = Field(
-        description="Main competitive advantage."
+        description="The main unique value proposition and competitive advantage."
     )
 
     recommended_mvp: List[str] = Field(
-        description="Essential MVP features."
+        description="A list of essential MVP features. Return multiple concise feature items."
     )
 
     recommended_tech_stack: List[str] = Field(
-        description="Recommended technologies from the engineering team."
+        description="A list of recommended technologies for the project. Return concise technology items."
     )
 
     launch_strategy: List[str] = Field(
-        description="High-level go-to-market strategy."
+        description="A list of high-level launch and go-to-market actions."
     )
 
     estimated_budget: str = Field(
-        description="Estimated startup budget."
+        description="Estimated startup or MVP development budget."
     )
 
     major_risks: List[str] = Field(
-        description="Biggest business risks."
+        description="A list of the most important business or technical risks."
     )
 
     next_steps: List[str] = Field(
-        description="Recommended execution roadmap."
+        description="A list of concrete next steps for executing the project."
     )

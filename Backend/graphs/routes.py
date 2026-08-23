@@ -53,7 +53,18 @@ def route_after_finance(state: CompanyState):
 
     plan = state["execution_plan"]
 
-    if plan["coding"]:
+    print("\n==============================")
+    print("🔀 ROUTING AFTER FINANCE")
+    print("EXECUTION PLAN:", plan)
+    print("CODING ENABLED:", plan.get("coding"))
+    print("==============================\n")
+
+    if plan.get("coding") is True:
+
+        print("➡️ Finance → Coding")
+
         return "coding"
+
+    print("➡️ Finance → CEO Finalize")
 
     return "ceo_finalize"

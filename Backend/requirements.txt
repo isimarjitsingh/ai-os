@@ -21,6 +21,11 @@ langgraph-checkpoint-redis
 langchain-google-genai
 
 # ===========================
+# Groq
+# ===========================
+langchain-groq
+
+# ===========================
 # Tavily Search
 # ===========================
 langchain-tavily
@@ -49,7 +54,6 @@ aiofiles
 # ===========================
 # Utilities
 # ===========================
-
 typing_extensions
 
 # ===========================
@@ -62,5 +66,7 @@ httpx
 # ===========================
 python-multipart
 
-
+# ===========================
+# Server-Sent Events
+# ===========================
 sse-starlette

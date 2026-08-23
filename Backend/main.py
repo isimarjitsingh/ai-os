@@ -334,21 +334,64 @@ async def stream(
             if event is not None:
 
                 yield {
-
                     "event": "update",
-
                     "data": json.dumps(event)
-
                 }
+
+            # --------------------------------------------------
+            # Workflow status
+            # --------------------------------------------------
 
             session = workflow_manager.get(thread_id)
 
-            if (
-                session is not None
-                and session.status == "completed"
-                and bus.queue.empty()
-            ):
-                break
+            if session:
+
+                # ----------------------------------------------
+                # Workflow FAILED
+                # ----------------------------------------------
+
+                if (
+                    session.status == "failed"
+                    and bus.queue.empty()
+                ):
+
+                    print(
+                        f"❌ Workflow failed: {thread_id}"
+                    )
+
+                    yield {
+                        "event": "failed",
+                        "data": json.dumps({
+                            "thread_id": thread_id,
+                            "status": "failed",
+                            "error": session.error,
+                        }),
+                    }
+
+                    break
+
+                # ----------------------------------------------
+                # Workflow COMPLETED
+                # ----------------------------------------------
+
+                if (
+                    session.status == "completed"
+                    and bus.queue.empty()
+                ):
+
+                    print(
+                        f"✅ Workflow completed: {thread_id}"
+                    )
+
+                    yield {
+                        "event": "completed",
+                        "data": json.dumps({
+                            "thread_id": thread_id,
+                            "status": "completed",
+                        }),
+                    }
+
+                    break
 
             await asyncio.sleep(0.05)
 

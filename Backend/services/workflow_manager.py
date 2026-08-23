@@ -13,7 +13,11 @@ class WorkflowSession:
 
     status: str = "running"
 
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    error: str | None = None
+
+    created_at: datetime = field(
+        default_factory=datetime.utcnow
+    )
 
 
 class WorkflowManager:
@@ -23,7 +27,7 @@ class WorkflowManager:
         self.sessions = {}
 
     # ----------------------------------
-    # Create Workflow Session
+    # Create
     # ----------------------------------
 
     def create(self, thread_id: str):
@@ -37,7 +41,7 @@ class WorkflowManager:
         return session
 
     # ----------------------------------
-    # Get Session
+    # Get
     # ----------------------------------
 
     def get(self, thread_id: str):
@@ -45,7 +49,7 @@ class WorkflowManager:
         return self.sessions.get(thread_id)
 
     # ----------------------------------
-    # Get Bus
+    # Bus
     # ----------------------------------
 
     def get_bus(self, thread_id: str):
@@ -59,7 +63,7 @@ class WorkflowManager:
         return None
 
     # ----------------------------------
-    # Finish Workflow
+    # Complete
     # ----------------------------------
 
     def finish(self, thread_id: str):
@@ -71,12 +75,39 @@ class WorkflowManager:
             session.status = "completed"
 
     # ----------------------------------
-    # Remove Session
+    # Fail
+    # ----------------------------------
+
+    def fail(
+        self,
+        thread_id: str,
+        error: str
+    ):
+
+        session = self.get(thread_id)
+
+        if session:
+
+            session.status = "failed"
+
+            session.error = error
+
+            session.bus.emit(
+                agent="workflow",
+                status="failed",
+                output=error
+            )
+
+    # ----------------------------------
+    # Remove
     # ----------------------------------
 
     def remove(self, thread_id: str):
 
-        self.sessions.pop(thread_id, None)
+        self.sessions.pop(
+            thread_id,
+            None
+        )
 
 
 workflow_manager = WorkflowManager()
