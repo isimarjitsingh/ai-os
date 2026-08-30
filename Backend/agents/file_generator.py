@@ -78,13 +78,15 @@ def file_generator_agent(state: CompanyState):
         update_project_name(
             db=db,
             thread_id=state["thread_id"],
-            project_name=project_name
+            project_name=project_name,
+            user_id=state["user_id"]
         )
 
         update_project_path(
             db=db,
             thread_id=state["thread_id"],
-            generated_path=f"generated_projects/{project_name}"
+            generated_path=f"generated_projects/{project_name}",
+            user_id=state["user_id"]
         )
 
         print(f"📦 Project: {project_name}")
@@ -192,7 +194,8 @@ def file_generator_agent(state: CompanyState):
                 db=db,
                 thread_id=state["thread_id"],
                 file_path=str(file_path),
-                category=file.category
+                category=file.category,
+                user_id=state["user_id"]
             )
 
             print("🗄️ File metadata saved to database")

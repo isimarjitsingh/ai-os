@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session, joinedload
 
 from database.models import (
+    User,
     Project,
     ResearchReport,
     MarketingReport,
@@ -12,6 +13,52 @@ from database.models import (
 
 
 # ==========================================================
+# USER
+# ==========================================================
+
+def get_user_by_email(
+    db: Session,
+    email: str
+):
+    return (
+        db.query(User)
+        .filter(User.email == email)
+        .first()
+    )
+
+
+def get_user_by_id(
+    db: Session,
+    user_id: int
+):
+    return (
+        db.query(User)
+        .filter(User.id == user_id)
+        .first()
+    )
+
+
+def create_user(
+    db: Session,
+    name: str,
+    email: str,
+    password_hash: str
+):
+
+    user = User(
+        name=name,
+        email=email,
+        password_hash=password_hash
+    )
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+
+# ==========================================================
 # PROJECT
 # ==========================================================
 
@@ -19,10 +66,13 @@ def create_project(
     db: Session,
     thread_id: str,
     startup_idea: str,
+    user_id: int,
 ):
+
     project = Project(
         thread_id=thread_id,
         startup_idea=startup_idea,
+        user_id=user_id,
         status="running",
     )
 
@@ -33,22 +83,41 @@ def create_project(
     return project
 
 
+# ==========================================================
+# GET PROJECT BY THREAD
+# ==========================================================
+
 def get_project_by_thread(
     db: Session,
     thread_id: str,
+    user_id: int | None = None,
 ):
-    return (
+
+    query = (
         db.query(Project)
         .filter(Project.thread_id == thread_id)
-        .first()
     )
 
+    if user_id is not None:
+
+        query = query.filter(
+            Project.user_id == user_id
+        )
+
+    return query.first()
+
+
+# ==========================================================
+# GET COMPLETE PROJECT
+# ==========================================================
 
 def get_complete_project(
     db: Session,
     thread_id: str,
+    user_id: int | None = None,
 ):
-    return (
+
+    query = (
         db.query(Project)
         .options(
             joinedload(Project.research_report),
@@ -58,31 +127,57 @@ def get_complete_project(
             joinedload(Project.ceo_report),
             joinedload(Project.generated_files),
         )
-        .filter(Project.thread_id == thread_id)
-        .first()
+        .filter(
+            Project.thread_id == thread_id
+        )
     )
 
+    if user_id is not None:
+
+        query = query.filter(
+            Project.user_id == user_id
+        )
+
+    return query.first()
+
+
+# ==========================================================
+# GET ALL USER PROJECTS
+# ==========================================================
 
 def get_all_projects(
     db: Session,
+    user_id: int,
 ):
+
     return (
         db.query(Project)
-        .order_by(Project.created_at.desc())
+        .filter(
+            Project.user_id == user_id
+        )
+        .order_by(
+            Project.created_at.desc()
+        )
         .all()
     )
 
 
 # ==========================================================
-# UPDATE PROJECT
+# UPDATE PROJECT NAME
 # ==========================================================
 
 def update_project_name(
     db: Session,
     thread_id: str,
     project_name: str,
+    user_id: int,
 ):
-    project = get_project_by_thread(db, thread_id)
+
+    project = get_project_by_thread(
+        db,
+        thread_id,
+        user_id
+    )
 
     if not project:
         return None
@@ -95,12 +190,22 @@ def update_project_name(
     return project
 
 
+# ==========================================================
+# UPDATE PROJECT PATH
+# ==========================================================
+
 def update_project_path(
     db: Session,
     thread_id: str,
     generated_path: str,
+    user_id: int,
 ):
-    project = get_project_by_thread(db, thread_id)
+
+    project = get_project_by_thread(
+        db,
+        thread_id,
+        user_id
+    )
 
     if not project:
         return None
@@ -113,12 +218,22 @@ def update_project_path(
     return project
 
 
+# ==========================================================
+# UPDATE PROJECT STATUS
+# ==========================================================
+
 def update_project_status(
     db: Session,
     thread_id: str,
     status: str,
+    user_id: int,
 ):
-    project = get_project_by_thread(db, thread_id)
+
+    project = get_project_by_thread(
+        db,
+        thread_id,
+        user_id
+    )
 
     if not project:
         return None
@@ -135,16 +250,36 @@ def update_project_status(
 # RESEARCH
 # ==========================================================
 
-def save_research_report(db, project, report):
+def save_research_report(
+    db,
+    project,
+    report
+):
 
     research = ResearchReport(
         project_id=project.id,
+
         market_overview=report["market_overview"],
-        target_audience=str(report["target_audience"]),
-        competitors=str(report["competitors"]),
-        key_features=str(report["key_features"]),
-        opportunities=str(report["opportunities"]),
-        risks=str(report["risks"]),
+
+        target_audience=str(
+            report["target_audience"]
+        ),
+
+        competitors=str(
+            report["competitors"]
+        ),
+
+        key_features=str(
+            report["key_features"]
+        ),
+
+        opportunities=str(
+            report["opportunities"]
+        ),
+
+        risks=str(
+            report["risks"]
+        ),
     )
 
     db.add(research)
@@ -158,16 +293,38 @@ def save_research_report(db, project, report):
 # MARKETING
 # ==========================================================
 
-def save_marketing_report(db, project, report):
+def save_marketing_report(
+    db,
+    project,
+    report
+):
 
     marketing = MarketingReport(
         project_id=project.id,
-        marketing_summary=report["marketing_summary"],
-        positioning=report["positioning"],
-        target_channels=str(report["target_channels"]),
-        launch_strategy=str(report["launch_strategy"]),
-        content_ideas=str(report["content_ideas"]),
-        kpis=str(report["kpis"]),
+
+        marketing_summary=report[
+            "marketing_summary"
+        ],
+
+        positioning=report[
+            "positioning"
+        ],
+
+        target_channels=str(
+            report["target_channels"]
+        ),
+
+        launch_strategy=str(
+            report["launch_strategy"]
+        ),
+
+        content_ideas=str(
+            report["content_ideas"]
+        ),
+
+        kpis=str(
+            report["kpis"]
+        ),
     )
 
     db.add(marketing)
@@ -181,16 +338,38 @@ def save_marketing_report(db, project, report):
 # FINANCE
 # ==========================================================
 
-def save_finance_report(db, project, report):
+def save_finance_report(
+    db,
+    project,
+    report
+):
 
     finance = FinanceReport(
         project_id=project.id,
-        startup_cost=report["startup_cost"],
-        monthly_cost=report["monthly_cost"],
-        revenue_model=str(report["revenue_model"]),
-        pricing_strategy=report["pricing_strategy"],
-        financial_risks=str(report["financial_risks"]),
-        break_even_estimate=report["break_even_estimate"],
+
+        startup_cost=report[
+            "startup_cost"
+        ],
+
+        monthly_cost=report[
+            "monthly_cost"
+        ],
+
+        revenue_model=str(
+            report["revenue_model"]
+        ),
+
+        pricing_strategy=report[
+            "pricing_strategy"
+        ],
+
+        financial_risks=report[
+            "financial_risks"
+        ],
+
+        break_even_estimate=report[
+            "break_even_estimate"
+        ],
     )
 
     db.add(finance)
@@ -204,20 +383,54 @@ def save_finance_report(db, project, report):
 # CODING
 # ==========================================================
 
-def save_coding_report(db, project, report):
+def save_coding_report(
+    db,
+    project,
+    report
+):
 
     coding = CodingReport(
         project_id=project.id,
-        project_name=report["project_name"],
-        tech_stack=str(report["tech_stack"]),
-        frontend=str(report["frontend"]),
-        backend=str(report["backend"]),
-        database=report["database"],
-        architecture=report["architecture"],
-        core_features=str(report["core_features"]),
-        api_endpoints=str(report["api_endpoints"]),
-        development_steps=str(report["development_steps"]),
-        system_architecture=report["system_architecture"],
+
+        project_name=report[
+            "project_name"
+        ],
+
+        tech_stack=str(
+            report["tech_stack"]
+        ),
+
+        frontend=str(
+            report["frontend"]
+        ),
+
+        backend=str(
+            report["backend"]
+        ),
+
+        database=report[
+            "database"
+        ],
+
+        architecture=report[
+            "architecture"
+        ],
+
+        core_features=str(
+            report["core_features"]
+        ),
+
+        api_endpoints=str(
+            report["api_endpoints"]
+        ),
+
+        development_steps=str(
+            report["development_steps"]
+        ),
+
+        system_architecture=report[
+            "system_architecture"
+        ],
     )
 
     db.add(coding)
@@ -231,20 +444,54 @@ def save_coding_report(db, project, report):
 # CEO
 # ==========================================================
 
-def save_ceo_report(db, project, report):
+def save_ceo_report(
+    db,
+    project,
+    report
+):
 
     ceo = CEOReport(
         project_id=project.id,
-        executive_summary=report["executive_summary"],
-        business_viability=report["business_viability"],
-        target_market=report["target_market"],
-        unique_value_proposition=report["unique_value_proposition"],
-        recommended_mvp=str(report["recommended_mvp"]),
-        recommended_tech_stack=str(report["recommended_tech_stack"]),
-        launch_strategy=str(report["launch_strategy"]),
-        estimated_budget=report["estimated_budget"],
-        major_risks=str(report["major_risks"]),
-        next_steps=str(report["next_steps"]),
+
+        executive_summary=report[
+            "executive_summary"
+        ],
+
+        business_viability=report[
+            "business_viability"
+        ],
+
+        target_market=report[
+            "target_market"
+        ],
+
+        unique_value_proposition=report[
+            "unique_value_proposition"
+        ],
+
+        recommended_mvp=str(
+            report["recommended_mvp"]
+        ),
+
+        recommended_tech_stack=str(
+            report["recommended_tech_stack"]
+        ),
+
+        launch_strategy=report[
+            "launch_strategy"
+        ],
+
+        estimated_budget=report[
+            "estimated_budget"
+        ],
+
+        major_risks=str(
+            report["major_risks"]
+        ),
+
+        next_steps=str(
+            report["next_steps"]
+        ),
     )
 
     db.add(ceo)
@@ -263,9 +510,14 @@ def save_generated_file(
     thread_id: str,
     file_path: str,
     category: str,
+    user_id: int,
 ):
 
-    project = get_project_by_thread(db, thread_id)
+    project = get_project_by_thread(
+        db,
+        thread_id,
+        user_id
+    )
 
     if not project:
         return None
@@ -283,40 +535,70 @@ def save_generated_file(
     return generated_file
 
 
+# ==========================================================
+# GET GENERATED FILES
+# ==========================================================
+
 def get_generated_files(
     db: Session,
     thread_id: str,
+    user_id: int,
 ):
 
-    project = get_project_by_thread(db, thread_id)
+    project = get_project_by_thread(
+        db,
+        thread_id,
+        user_id
+    )
 
     if not project:
         return []
 
     return (
         db.query(GeneratedFile)
-        .filter(GeneratedFile.project_id == project.id)
+        .filter(
+            GeneratedFile.project_id == project.id
+        )
         .all()
     )
 
 
+# ==========================================================
+# GET SINGLE GENERATED FILE
+# ==========================================================
+
 def get_generated_file(
     db: Session,
     file_id: int,
+    user_id: int,
 ):
+
     return (
         db.query(GeneratedFile)
-        .filter(GeneratedFile.id == file_id)
+        .join(Project)
+        .filter(
+            GeneratedFile.id == file_id,
+            Project.user_id == user_id
+        )
         .first()
     )
 
 
+# ==========================================================
+# DELETE GENERATED FILE
+# ==========================================================
+
 def delete_generated_file(
     db: Session,
     file_id: int,
+    user_id: int,
 ):
 
-    file = get_generated_file(db, file_id)
+    file = get_generated_file(
+        db,
+        file_id,
+        user_id
+    )
 
     if not file:
         return False

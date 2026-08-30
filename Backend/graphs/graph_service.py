@@ -1,4 +1,5 @@
 from langgraph.checkpoint.redis import RedisSaver
+from langgraph.checkpoint.memory import MemorySaver
 from graphs.company_graph import builder
 from services.workflow_manager import workflow_manager
 from database.database import SessionLocal
@@ -10,14 +11,25 @@ class GraphService:
     def __init__(self):
         self.redis_url = "redis://localhost:6379"
 
+    def get_checkpointer(self):
+        """Try to get Redis checkpointer, fallback to MemorySaver"""
+        try:
+            import redis
+            # Try to connect to Redis
+            redis_client = redis.from_url(self.redis_url)
+            redis_client.ping()
+            print("✅ Redis connection successful")
+            # Create RedisSaver with the redis client directly
+            return RedisSaver(redis_client)
+        except Exception as e:
+            print(f"⚠️ Redis not available, using MemorySaver: {e}")
+            return MemorySaver()
+
     def execute(self, state: dict, thread_id: str):
 
-        with RedisSaver.from_conn_string(
-            self.redis_url
-        ) as checkpointer:
+        checkpointer = self.get_checkpointer()
 
-            checkpointer.setup()
-
+        try:
             graph = builder.compile(
                 checkpointer=checkpointer
             )
@@ -59,7 +71,8 @@ class GraphService:
                     update_project_status(
                         db=db,
                         thread_id=thread_id,
-                        status="completed"
+                        status="completed",
+                        user_id=state["user_id"]
                     )
 
                 finally:
@@ -95,7 +108,8 @@ class GraphService:
                     update_project_status(
                         db=db,
                         thread_id=thread_id,
-                        status="failed"
+                        status="failed",
+                        user_id=state["user_id"]
                     )
 
                 finally:
@@ -111,12 +125,20 @@ class GraphService:
 
                 raise
 
+        except Exception as e:
+            print(f"Graph compilation error: {e}")
+            raise
+
+        finally:
+            # Clean up checkpointer if needed
+            if hasattr(checkpointer, 'close'):
+                checkpointer.close()
+
     def invoke(self, state: dict, thread_id: str):
 
-        with RedisSaver.from_conn_string(self.redis_url) as checkpointer:
+        checkpointer = self.get_checkpointer()
 
-            checkpointer.setup()
-
+        try:
             graph = builder.compile(
                 checkpointer=checkpointer
             )
@@ -131,3 +153,9 @@ class GraphService:
                 state,
                 config=config
             )
+        except Exception as e:
+            print(f"Graph invocation error: {e}")
+            raise
+        finally:
+            if hasattr(checkpointer, 'close'):
+                checkpointer.close()

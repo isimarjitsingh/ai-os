@@ -94,7 +94,8 @@ def coding_agent(state: CompanyState):
 
             project = get_complete_project(
                 db,
-                state["thread_id"]
+                state["thread_id"],
+                state["user_id"]
             )
 
             if project:

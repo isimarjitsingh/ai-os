@@ -3,10 +3,19 @@ import {
     Search,
     Plus,
     Settings,
-    ChevronDown
+    ChevronDown,
+    LogOut
 } from "lucide-react";
 
+import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+
 function Header() {
+
+    const { isAuthenticated, logout, user } = useAuth();
+
+    const userName = user?.name || "User";
+    const userInitial = userName.charAt(0).toUpperCase();
 
     return (
 
@@ -170,66 +179,144 @@ function Header() {
 
                     </button>
 
-                    {/* User */}
+                    {/* Auth Buttons or User Profile */}
 
-                    <button
-                        className="
-                            flex
-                            items-center
-                            gap-3
-                            rounded-xl
-                            border
-                            border-slate-200
-                            bg-white
-                            px-3
-                            py-2
-                            hover:bg-slate-50
-                            transition
-                        "
-                    >
+                    {isAuthenticated ? (
+                        /* User Profile and Logout (when logged in) */
+                        <div className="flex items-center gap-3">
 
-                        <div
-                            className="
-                                flex
-                                h-10
-                                w-10
-                                items-center
-                                justify-center
-                                rounded-full
-                                bg-gradient-to-br
-                                from-violet-600
-                                to-indigo-600
-                                text-white
-                                font-bold
-                            "
-                        >
+                            <button
+                                className="
+                                    flex
+                                    items-center
+                                    gap-3
+                                    rounded-xl
+                                    border
+                                    border-slate-200
+                                    bg-white
+                                    px-3
+                                    py-2
+                                    hover:bg-slate-50
+                                    transition
+                                "
+                            >
 
-                            S
+                                <div
+                                    className="
+                                        flex
+                                        h-10
+                                        w-10
+                                        items-center
+                                        justify-center
+                                        rounded-full
+                                        bg-gradient-to-br
+                                        from-violet-600
+                                        to-indigo-600
+                                        text-white
+                                        font-bold
+                                    "
+                                >
+
+                                    {userInitial}
+
+                                </div>
+
+                                <div className="hidden xl:block text-left">
+
+                                    <h3 className="text-sm font-semibold">
+
+                                        {userName}
+
+                                    </h3>
+
+                                    <p className="text-xs text-slate-500">
+
+                                        Admin
+
+                                    </p>
+
+                                </div>
+
+                                <ChevronDown
+                                    size={16}
+                                    className="text-slate-500"
+                                />
+
+                            </button>
+
+                            {/* Logout Button */}
+
+                            <button
+                                onClick={logout}
+                                className="
+                                    flex
+                                    h-11
+                                    w-11
+                                    items-center
+                                    justify-center
+                                    rounded-xl
+                                    border
+                                    border-slate-200
+                                    hover:bg-red-50
+                                    hover:border-red-200
+                                    hover:text-red-600
+                                    transition
+                                "
+                                title="Logout"
+                            >
+
+                                <LogOut size={20} />
+
+                            </button>
 
                         </div>
+                    ) : (
+                        /* Login/Register Buttons (when logged out) */
+                        <div className="flex items-center gap-3">
 
-                        <div className="hidden xl:block text-left">
+                            <Link
+                                to="/login"
+                                className="
+                                    hidden
+                                    md:flex
+                                    items-center
+                                    gap-2
+                                    rounded-xl
+                                    border
+                                    border-slate-200
+                                    hover:bg-slate-50
+                                    px-5
+                                    py-3
+                                    text-slate-700
+                                    font-semibold
+                                    transition
+                                "
+                            >
+                                Login
+                            </Link>
 
-                            <h3 className="text-sm font-semibold">
-
-                                Simarjit
-
-                            </h3>
-
-                            <p className="text-xs text-slate-500">
-
-                                Admin
-
-                            </p>
+                            <Link
+                                to="/register"
+                                className="
+                                    hidden
+                                    md:flex
+                                    items-center
+                                    gap-2
+                                    rounded-xl
+                                    bg-violet-600
+                                    hover:bg-violet-700
+                                    px-5
+                                    py-3
+                                    text-white
+                                    font-semibold
+                                    transition
+                                "
+                            >
+                                Register
+                            </Link>
 
                         </div>
-
-                        <ChevronDown
-                            size={16}
-                            className="text-slate-500"
-                        />
-
-                    </button>
+                    )}
 
                 </div>
 

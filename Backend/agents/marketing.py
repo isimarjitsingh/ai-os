@@ -47,7 +47,9 @@ def marketing_agent(state: CompanyState):
 
             db,
 
-            state["thread_id"]
+            state["thread_id"],
+
+            state["user_id"]
 
         )
 

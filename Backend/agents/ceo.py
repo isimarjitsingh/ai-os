@@ -371,7 +371,8 @@ def ceo_finalize(state: CompanyState):
 
         project = get_complete_project(
             db,
-            state["thread_id"]
+            state["thread_id"],
+            state["user_id"]
         )
 
         print(
@@ -430,7 +431,8 @@ def ceo_finalize(state: CompanyState):
         update_project_status(
             db=db,
             thread_id=state["thread_id"],
-            status="completed"
+            status="completed",
+            user_id=state["user_id"]
         )
 
         print(

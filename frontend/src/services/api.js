@@ -1,4 +1,8 @@
+import { getAuthHeaders, getToken } from "./auth";
+
 const API_URL = "http://localhost:8000";
+
+
 
 // =========================================
 // Generate Startup
@@ -10,20 +14,31 @@ export async function generateProject(userGoal) {
         `${API_URL}/generate`,
         {
             method: "POST",
+
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+
+                ...getAuthHeaders()
             },
+
             body: JSON.stringify({
                 user_goal: userGoal
             })
         }
     );
 
+    const result = await response.json();
+
     if (!response.ok) {
-        throw new Error("Failed to generate project");
+
+        throw new Error(
+            result.detail ||
+            "Failed to generate project"
+        );
+
     }
 
-    return await response.json();
+    return result;
 }
 
 // =========================================
@@ -32,7 +47,10 @@ export async function generateProject(userGoal) {
 
 export function getWorkflowStream(threadId, userGoal) {
 
-    return `${API_URL}/stream/${threadId}?user_goal=${encodeURIComponent(userGoal)}`;
+    const token = getToken();
+    const tokenParam = token ? `&token=${encodeURIComponent(token)}` : '';
+
+    return `${API_URL}/stream/${threadId}?user_goal=${encodeURIComponent(userGoal)}${tokenParam}`;
 
 }
 
@@ -43,14 +61,26 @@ export function getWorkflowStream(threadId, userGoal) {
 export async function getProject(threadId) {
 
     const response = await fetch(
-        `${API_URL}/projects/${threadId}`
+        `${API_URL}/projects/${threadId}`,
+        {
+            headers: {
+                ...getAuthHeaders()
+            }
+        }
     );
 
+    const result = await response.json();
+
     if (!response.ok) {
-        throw new Error("Unable to fetch project");
+
+        throw new Error(
+            result.detail ||
+            "Unable to fetch project"
+        );
+
     }
 
-    return await response.json();
+    return result;
 }
 
 // =========================================
@@ -60,30 +90,49 @@ export async function getProject(threadId) {
 export async function getProjects() {
 
     const response = await fetch(
-        `${API_URL}/projects`
+        `${API_URL}/projects`,
+        {
+            headers: {
+                ...getAuthHeaders()
+            }
+        }
     );
 
+    const result = await response.json();
+
     if (!response.ok) {
-        throw new Error("Unable to fetch projects");
+
+        throw new Error(
+            result.detail ||
+            "Unable to fetch projects"
+        );
+
     }
 
-    return await response.json();
+    return result;
 }
 
 export async function getFile(fileId) {
 
     const response = await fetch(
-
-        `${API_URL}/files/${fileId}`
-
+        `${API_URL}/files/${fileId}`,
+        {
+            headers: {
+                ...getAuthHeaders()
+            }
+        }
     );
+
+    const result = await response.json();
 
     if (!response.ok) {
 
-        throw new Error("Unable to fetch file");
+        throw new Error(
+            result.detail ||
+            "Unable to fetch file"
+        );
 
     }
 
-    return await response.json();
-
+    return result;
 }

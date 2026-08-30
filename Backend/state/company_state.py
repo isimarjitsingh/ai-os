@@ -10,6 +10,8 @@ class CompanyState(TypedDict):
 
     user_goal: str
 
+    user_id: int
+
     execution_plan: ExecutionPlan
 
     research_report: Optional[dict]

@@ -14,6 +14,53 @@ from sqlalchemy.sql import func
 from database import Base
 
 
+# ==========================================================
+# USER
+# ==========================================================
+
+class User(Base):
+
+    __tablename__ = "users"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    name = Column(
+        String,
+        nullable=False
+    )
+
+    email = Column(
+        String,
+        unique=True,
+        nullable=False,
+        index=True
+    )
+
+    password_hash = Column(
+        String,
+        nullable=False
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now()
+    )
+
+    projects = relationship(
+        "Project",
+        back_populates="user",
+        cascade="all, delete"
+    )
+
+
+# ==========================================================
+# PROJECT
+# ==========================================================
+
 class Project(Base):
 
     __tablename__ = "projects"
@@ -29,6 +76,22 @@ class Project(Base):
         unique=True,
         nullable=False,
         index=True
+    )
+
+    # ======================================================
+    # OWNER
+    # ======================================================
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    user = relationship(
+        "User",
+        back_populates="projects"
     )
 
     project_name = Column(
@@ -90,7 +153,6 @@ class Project(Base):
         cascade="all, delete"
     )
 
-
     ceo_report = relationship(
         "CEOReport",
         back_populates="project",
@@ -105,6 +167,9 @@ class Project(Base):
     )
 
 
+# ==========================================================
+# RESEARCH
+# ==========================================================
 
 class ResearchReport(Base):
 
@@ -122,34 +187,22 @@ class ResearchReport(Base):
         nullable=False
     )
 
-    market_overview = Column(
-        Text
-    )
-
-    target_audience = Column(
-        Text
-    )
-
-    competitors = Column(
-        Text
-    )
-
-    key_features = Column(
-        Text
-    )
-
-    opportunities = Column(
-        Text
-    )
-
-    risks = Column(
-        Text
-    )
+    market_overview = Column(Text)
+    target_audience = Column(Text)
+    competitors = Column(Text)
+    key_features = Column(Text)
+    opportunities = Column(Text)
+    risks = Column(Text)
 
     project = relationship(
         "Project",
         back_populates="research_report"
     )
+
+
+# ==========================================================
+# MARKETING
+# ==========================================================
 
 class MarketingReport(Base):
 
@@ -179,6 +232,11 @@ class MarketingReport(Base):
         back_populates="marketing_report"
     )
 
+
+# ==========================================================
+# FINANCE
+# ==========================================================
+
 class FinanceReport(Base):
 
     __tablename__ = "finance_reports"
@@ -206,6 +264,11 @@ class FinanceReport(Base):
         "Project",
         back_populates="finance_report"
     )
+
+
+# ==========================================================
+# CODING
+# ==========================================================
 
 class CodingReport(Base):
 
@@ -239,6 +302,11 @@ class CodingReport(Base):
         back_populates="coding_report"
     )
 
+
+# ==========================================================
+# CEO
+# ==========================================================
+
 class CEOReport(Base):
 
     __tablename__ = "ceo_reports"
@@ -270,6 +338,11 @@ class CEOReport(Base):
         "Project",
         back_populates="ceo_report"
     )
+
+
+# ==========================================================
+# GENERATED FILES
+# ==========================================================
 
 class GeneratedFile(Base):
 
