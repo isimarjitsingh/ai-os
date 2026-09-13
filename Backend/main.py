@@ -30,7 +30,7 @@ from database.crud import (
 
 from auth.dependencies import get_current_user
 from routes.auth import router as auth_router
-
+from routes.files import router as files_router
 from pathlib import Path
 
 
@@ -62,7 +62,8 @@ app.add_middleware(
     CORSMiddleware,
 
     allow_origins=[
-        "http://localhost:5173"
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
     ],
 
     allow_credentials=True,
@@ -79,6 +80,10 @@ app.add_middleware(
 
 app.include_router(
     auth_router
+)
+
+app.include_router(
+    files_router
 )
 
 

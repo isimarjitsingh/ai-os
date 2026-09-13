@@ -1,3 +1,5 @@
+import json
+
 from sqlalchemy.orm import Session, joinedload
 
 from database.models import (
@@ -10,6 +12,24 @@ from database.models import (
     CEOReport,
     GeneratedFile,
 )
+
+
+def _as_text(value):
+    """
+    Render a report field for its TEXT column without disguising its shape.
+
+    These columns are plain TEXT, which is why list-shaped fields used to be
+    written with str() - producing "['a', 'b']" for a real answer and the
+    near-noise "[', ']" when a model replied with an empty array. JSON keeps
+    the same information readable and machine-parseable, and leaves text,
+    numbers and None exactly as they arrived.
+    """
+
+    if isinstance(value, (list, tuple, dict)):
+        return json.dumps(list(value) if isinstance(value, tuple) else value,
+                          ensure_ascii=False)
+
+    return value
 
 
 # ==========================================================
@@ -261,25 +281,15 @@ def save_research_report(
 
         market_overview=report["market_overview"],
 
-        target_audience=str(
-            report["target_audience"]
-        ),
+        target_audience=_as_text(report["target_audience"]),
 
-        competitors=str(
-            report["competitors"]
-        ),
+        competitors=_as_text(report["competitors"]),
 
-        key_features=str(
-            report["key_features"]
-        ),
+        key_features=_as_text(report["key_features"]),
 
-        opportunities=str(
-            report["opportunities"]
-        ),
+        opportunities=_as_text(report["opportunities"]),
 
-        risks=str(
-            report["risks"]
-        ),
+        risks=_as_text(report["risks"]),
     )
 
     db.add(research)
@@ -310,21 +320,13 @@ def save_marketing_report(
             "positioning"
         ],
 
-        target_channels=str(
-            report["target_channels"]
-        ),
+        target_channels=_as_text(report["target_channels"]),
 
-        launch_strategy=str(
-            report["launch_strategy"]
-        ),
+        launch_strategy=_as_text(report["launch_strategy"]),
 
-        content_ideas=str(
-            report["content_ideas"]
-        ),
+        content_ideas=_as_text(report["content_ideas"]),
 
-        kpis=str(
-            report["kpis"]
-        ),
+        kpis=_as_text(report["kpis"]),
     )
 
     db.add(marketing)
@@ -355,9 +357,7 @@ def save_finance_report(
             "monthly_cost"
         ],
 
-        revenue_model=str(
-            report["revenue_model"]
-        ),
+        revenue_model=_as_text(report["revenue_model"]),
 
         pricing_strategy=report[
             "pricing_strategy"
@@ -396,17 +396,11 @@ def save_coding_report(
             "project_name"
         ],
 
-        tech_stack=str(
-            report["tech_stack"]
-        ),
+        tech_stack=_as_text(report["tech_stack"]),
 
-        frontend=str(
-            report["frontend"]
-        ),
+        frontend=_as_text(report["frontend"]),
 
-        backend=str(
-            report["backend"]
-        ),
+        backend=_as_text(report["backend"]),
 
         database=report[
             "database"
@@ -416,17 +410,11 @@ def save_coding_report(
             "architecture"
         ],
 
-        core_features=str(
-            report["core_features"]
-        ),
+        core_features=_as_text(report["core_features"]),
 
-        api_endpoints=str(
-            report["api_endpoints"]
-        ),
+        api_endpoints=_as_text(report["api_endpoints"]),
 
-        development_steps=str(
-            report["development_steps"]
-        ),
+        development_steps=_as_text(report["development_steps"]),
 
         system_architecture=report[
             "system_architecture"
@@ -469,13 +457,9 @@ def save_ceo_report(
             "unique_value_proposition"
         ],
 
-        recommended_mvp=str(
-            report["recommended_mvp"]
-        ),
+        recommended_mvp=_as_text(report["recommended_mvp"]),
 
-        recommended_tech_stack=str(
-            report["recommended_tech_stack"]
-        ),
+        recommended_tech_stack=_as_text(report["recommended_tech_stack"]),
 
         launch_strategy=report[
             "launch_strategy"
@@ -485,13 +469,9 @@ def save_ceo_report(
             "estimated_budget"
         ],
 
-        major_risks=str(
-            report["major_risks"]
-        ),
+        major_risks=_as_text(report["major_risks"]),
 
-        next_steps=str(
-            report["next_steps"]
-        ),
+        next_steps=_as_text(report["next_steps"]),
     )
 
     db.add(ceo)

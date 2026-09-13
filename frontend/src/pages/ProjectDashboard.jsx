@@ -17,6 +17,8 @@ import CEOReport from "../components/dashboard/reports/CEOReport";
 import CodingReport from "../components/dashboard/reports/CodingReport";
 import OverviewTab from "../components/dashboard/reports/OverviewTab";
 
+import WebPreview from "../components/preview/WebPreview";
+
 
 function ProjectDashboard() {
 
@@ -31,6 +33,9 @@ function ProjectDashboard() {
     const [loading, setLoading] = useState(true);
 
     const [refreshing, setRefreshing] = useState(false);
+
+    // WebContainer preview state
+    const [showPreview, setShowPreview] = useState(false);
 
 
     // ==========================================================
@@ -130,25 +135,30 @@ function ProjectDashboard() {
                 projectData.coding
             );
 
+
             console.log(
                 "📁 GENERATED FILES:",
                 projectData.files
             );
+
 
             console.log(
                 "🔬 RESEARCH REPORT:",
                 projectData.research
             );
 
+
             console.log(
                 "📣 MARKETING REPORT:",
                 projectData.marketing
             );
 
+
             console.log(
                 "💰 FINANCE REPORT:",
                 projectData.finance
             );
+
 
             console.log(
                 "👔 CEO REPORT:",
@@ -170,6 +180,7 @@ function ProjectDashboard() {
             ) {
 
                 const firstFile = projectData.files[0];
+
 
                 /*
                  * Some APIs return:
@@ -203,6 +214,7 @@ function ProjectDashboard() {
                             fileResponse
                         );
 
+
                     } catch (fileError) {
 
                         console.error(
@@ -211,6 +223,7 @@ function ProjectDashboard() {
                         );
 
                         setSelectedFile(null);
+
                     }
 
                 }
@@ -415,6 +428,7 @@ function ProjectDashboard() {
 
         <div className="mx-auto max-w-7xl space-y-8">
 
+
             {/* ==================================================
                 HEADER
             ================================================== */}
@@ -474,6 +488,32 @@ function ProjectDashboard() {
 
 
             {/* ==================================================
+                WEBSITE PREVIEW BUTTON
+            ================================================== */}
+
+            {project.status === "completed" && (
+
+                <div className="flex justify-end">
+
+                    <button
+                        onClick={() => setShowPreview(true)}
+                        className="inline-flex items-center gap-2 rounded-lg bg-black px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800"
+                    >
+
+                        <span>
+                            ▶
+                        </span>
+
+                        Preview Website
+
+                    </button>
+
+                </div>
+
+            )}
+
+
+            {/* ==================================================
                 TABS
             ================================================== */}
 
@@ -506,6 +546,7 @@ function ProjectDashboard() {
 
                     <div className="grid gap-8 lg:grid-cols-3">
 
+
                         <div>
 
                             <GeneratedFiles
@@ -523,6 +564,7 @@ function ProjectDashboard() {
                             />
 
                         </div>
+
 
                     </div>
 
@@ -595,10 +637,80 @@ function ProjectDashboard() {
 
             </div>
 
+
+            {/* ==================================================
+                WEB CONTAINER PREVIEW MODAL
+            ================================================== */}
+
+            {showPreview && (
+
+                <div className="fixed inset-0 z-50 bg-black/60 p-4">
+
+                    <div className="mx-auto flex h-full max-w-7xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+
+
+                        {/* ==================================================
+                            PREVIEW HEADER
+                        ================================================== */}
+
+                        <div className="flex items-center justify-between border-b px-5 py-3">
+
+
+                            <div>
+
+                                <h2 className="text-lg font-semibold text-gray-900">
+
+                                    Live Website Preview
+
+                                </h2>
+
+
+                                <p className="text-xs text-gray-500">
+
+                                    Running your generated frontend inside WebContainer
+
+                                </p>
+
+                            </div>
+
+
+                            <button
+                                onClick={() => setShowPreview(false)}
+                                className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+                            >
+
+                                ✕ Close
+
+                            </button>
+
+
+                        </div>
+
+
+                        {/* ==================================================
+                            WEB PREVIEW
+                        ================================================== */}
+
+                        <div className="min-h-0 flex-1">
+
+                            <WebPreview
+                                threadId={threadId}
+                            />
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+            )}
+
         </div>
 
     );
 
 }
+
 
 export default ProjectDashboard;

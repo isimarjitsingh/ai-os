@@ -1,7 +1,8 @@
 import time
 from typing import Any
 
-from llm import llm
+from llm import structured_llm
+from llm_fallback import invoke_structured
 from prompts.ceo import CEO_FINAL_PROMPT
 from prompts.ceo_planner import CEO_PLANNER_PROMPT
 from schemas.execution_plan import ExecutionPlan
@@ -27,18 +28,109 @@ from database.crud import (
 # CEO PLANNER
 # ============================================================
 
-planner_llm = llm.with_structured_output(ExecutionPlan)
+# json_schema mode instead of tool calling - tool_choice based structured
+# output intermittently dies with Groq 400 "tool_use_failed" on
+# openai/gpt-oss-120b (the original CEO crash that produced empty
+# plans before the fallback existed).
+planner_llm = structured_llm(ExecutionPlan)
 
 planner_chain = CEO_PLANNER_PROMPT | planner_llm
+
+
+# Fallback plan mirrors the hardcoded plan that ceo_initialize's
+# exception handler already used: run everything that generates value.
+PLANNER_FALLBACK_FIELDS = {
+    "research": True,
+    "marketing": True,
+    "finance": True,
+    "coding": True,
+    "hr": False,
+    "sales": False,
+    "customer_support": False,
+}
 
 
 # ============================================================
 # CEO FINAL REPORT
 # ============================================================
 
-ceo_llm = llm.with_structured_output(CEOFinalOutput)
+ceo_llm = structured_llm(CEOFinalOutput)
 
 ceo_chain = CEO_FINAL_PROMPT | ceo_llm
+
+
+# Fallback report used when the CEO LLM call cannot be recovered. The
+# dict keys are filtered against CEOFinalOutput.model_fields inside
+# llm_fallback.fallback_model, and the values are static versions of
+# what ceo_finalize's exception handler already produced by hand.
+CEO_FALLBACK_FIELDS = {
+    "project_name": "AI Generated Project",
+
+    "executive_summary": (
+        "The project was successfully generated after completing "
+        "the required research, marketing, finance, and engineering "
+        "workflows."
+    ),
+
+    "business_viability": (
+        "The project demonstrates potential based on the available "
+        "research, financial analysis, and technical implementation."
+    ),
+
+    "target_market": (
+        "The primary target market is based on the customer segment "
+        "identified by the research and marketing agents."
+    ),
+
+    "unique_value_proposition": (
+        "The product combines the identified customer needs with the "
+        "proposed technical solution to provide a differentiated "
+        "experience."
+    ),
+
+    "recommended_mvp": [
+        "Core product functionality",
+        "User authentication",
+        "Primary customer workflow",
+        "Basic dashboard",
+        "Essential API functionality",
+    ],
+
+    "recommended_tech_stack": [
+        "Next.js",
+        "TypeScript",
+        "NestJS",
+        "PostgreSQL",
+        "REST API",
+    ],
+
+    "launch_strategy": [
+        "Launch an MVP with the core user workflow",
+        "Collect feedback from early users",
+        "Improve product-market fit",
+        "Expand features based on usage data",
+    ],
+
+    "estimated_budget": (
+        "Budget should be finalized using the detailed finance agent "
+        "projections."
+    ),
+
+    "major_risks": [
+        "Product-market fit risk",
+        "Customer acquisition cost",
+        "Technical implementation complexity",
+        "Competition",
+    ],
+
+    "next_steps": [
+        "Review the generated project",
+        "Install project dependencies",
+        "Configure environment variables",
+        "Run backend and frontend",
+        "Test the core user workflows",
+    ],
+}
 
 
 # ============================================================
@@ -60,10 +152,14 @@ def ceo_initialize(state: CompanyState):
 
         print("CEO Initialize - Calling LLM for execution plan...")
 
-        execution_plan = planner_chain.invoke(
+        execution_plan = invoke_structured(
+            planner_chain,
+            ExecutionPlan,
             {
                 "user_goal": state["user_goal"]
-            }
+            },
+            fields=PLANNER_FALLBACK_FIELDS,
+            label="CEO Planner"
         )
 
         print(
@@ -208,7 +304,9 @@ def ceo_finalize(state: CompanyState):
             "CEO Agent - Calling LLM for final report..."
         )
 
-        response = ceo_chain.invoke(
+        response = invoke_structured(
+            ceo_chain,
+            CEOFinalOutput,
             {
                 "user_goal": state["user_goal"],
 
@@ -236,7 +334,9 @@ def ceo_finalize(state: CompanyState):
                     "generated_project",
                     {}
                 ),
-            }
+            },
+            fields=CEO_FALLBACK_FIELDS,
+            label="CEO Agent"
         )
 
         print(
