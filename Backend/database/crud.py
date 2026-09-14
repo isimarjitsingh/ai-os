@@ -491,6 +491,7 @@ def save_generated_file(
     file_path: str,
     category: str,
     user_id: int,
+    contents: str | None = None,
 ):
 
     project = get_project_by_thread(
@@ -506,6 +507,7 @@ def save_generated_file(
         project_id=project.id,
         file_path=file_path,
         category=category,
+        contents=contents,
     )
 
     db.add(generated_file)

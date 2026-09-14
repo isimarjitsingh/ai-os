@@ -1,56 +1,37 @@
 import ProgressCard from "./ProgressCard";
-import CurrentAgent from "./CurrentAgent";
 import WorkflowTimeline from "./WorkflowTimeline";
 
+/* ==========================================================
+   AgentProgress — composes the live workflow widgets.
+========================================================== */
+
 function AgentProgress({
-
     completed = 0,
-
     total = 6,
-
+    percentage = 0,
     currentAgent = null,
-
     finished = false,
-
-    statuses = {}
-
+    failed = false,
+    connected = false,
+    elapsed = 0,
+    statuses = {},
 }) {
-
     return (
-
         <div className="space-y-6">
-
-            {/* Progress */}
-
             <ProgressCard
-
                 completed={completed}
-
                 total={total}
-
-            />
-
-            {/* Current Running Agent */}
-
-            <CurrentAgent
-
-                agent={currentAgent}
+                percentage={percentage}
+                currentAgent={currentAgent}
                 finished={finished}
-
+                failed={failed}
+                connected={connected}
+                elapsed={elapsed}
             />
 
-            {/* Workflow */}
-
-            <WorkflowTimeline
-
-                statuses={statuses}
-
-            />
-
+            <WorkflowTimeline statuses={statuses} />
         </div>
-
     );
-
 }
 
 export default AgentProgress;

@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 import Layout from "./components/layout/Layout";
 import PublicLayout from "./components/layout/PublicLayout";
+import AppToaster from "./components/ui/AppToaster";
 
 import Home from "./pages/Home";
 import Generate from "./pages/Generate";
@@ -14,122 +15,57 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
-import ProtectedRoute from "./routes/ProtectedRoute";
-
+import ProtectedRoute, { PublicRoute } from "./routes/ProtectedRoute";
 
 function App() {
-
     return (
-
-        <Routes>
-
-            {/* ==================================================
-                PUBLIC AUTH ROUTES
-            ================================================== */}
-
-            <Route
-                element={<PublicLayout />}
-            >
-                <Route
-                    path="/login"
-                    element={<Login />}
-                />
-
-                <Route
-                    path="/register"
-                    element={<Register />}
-                />
-            </Route>
-
-
-            {/* ==================================================
-                PROTECTED APPLICATION
-            ================================================== */}
-
-            <Route
-                element={
-                    <ProtectedRoute>
-                        <Layout />
-                    </ProtectedRoute>
-                }
-            >
-
-                {/* HOME */}
-
-                <Route
-                    path="/"
-                    element={<Home />}
-                />
-
-
-                {/* GENERATE */}
-
-                <Route
-                    path="/generate"
-                    element={<Generate />}
-                />
-
-
-                {/* GENERATION */}
-
-                <Route
-                    path="/generation"
-                    element={<Generation />}
-                />
-
-
-                {/* PROJECTS */}
-
-                <Route
-                    path="/projects"
-                    element={<Projects />}
-                />
-
-
-                {/* PROJECT DASHBOARD */}
-
-                <Route
-                    path="/project/:threadId"
-                    element={<ProjectDashboard />}
-                />
-
-
-                {/* AGENTS */}
-
-                <Route
-                    path="/agents"
-                    element={<Agents />}
-                />
-
-
-                {/* SETTINGS */}
-
-                <Route
-                    path="/settings"
-                    element={<Settings />}
-                />
-
-            </Route>
-
-
-            {/* ==================================================
-                UNKNOWN ROUTE
-            ================================================== */}
-
-            <Route
-                path="*"
-                element={
-                    <Navigate
-                        to="/"
-                        replace
+        <>
+            <Routes>
+                {/* ---------------- public auth ---------------- */}
+                <Route element={<PublicLayout />}>
+                    <Route
+                        path="/login"
+                        element={
+                            <PublicRoute>
+                                <Login />
+                            </PublicRoute>
+                        }
                     />
-                }
-            />
 
-        </Routes>
+                    <Route
+                        path="/register"
+                        element={
+                            <PublicRoute>
+                                <Register />
+                            </PublicRoute>
+                        }
+                    />
+                </Route>
 
+                {/* ---------------- protected app ---------------- */}
+                <Route
+                    element={
+                        <ProtectedRoute>
+                            <Layout />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route path="/" element={<Home />} />
+                    <Route path="/generate" element={<Generate />} />
+                    <Route path="/generation" element={<Generation />} />
+                    <Route path="/projects" element={<Projects />} />
+                    <Route path="/project/:threadId" element={<ProjectDashboard />} />
+                    <Route path="/agents" element={<Agents />} />
+                    <Route path="/settings" element={<Settings />} />
+                </Route>
+
+                {/* ---------------- fallback ---------------- */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+
+            <AppToaster />
+        </>
     );
-
 }
 
 export default App;

@@ -1,11 +1,13 @@
 import { Outlet } from "react-router-dom";
 
-import PublicHeader from "./PublicHeader";
+/* ==========================================================
+   PublicLayout — auth screens own their full viewport, so
+   this only guarantees a dark canvas.
+========================================================== */
 
 function PublicLayout() {
     return (
-        <div className="min-h-screen bg-gray-50">
-            <PublicHeader />
+        <div className="min-h-screen bg-[#05060e]">
             <Outlet />
         </div>
     );

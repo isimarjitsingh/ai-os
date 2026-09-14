@@ -126,7 +126,17 @@ def get_project_files(
         # PROJECT DIRECTORY
         # --------------------------------------------------
 
-        project_root = generated_root / project.project_name
+        project_root = (
+            generated_root / project.project_name
+            if project.project_name
+            else None
+        )
+
+        project_root_resolved = (
+            project_root.resolve()
+            if project_root is not None and project_root.exists()
+            else None
+        )
 
         print("\n================================================")
         print("📁 FILES ENDPOINT DEBUG")
@@ -134,65 +144,112 @@ def get_project_files(
         print("Generated root:", generated_root)
         print("Project name:", project.project_name)
         print("Project root:", project_root)
-        print("Project root exists:", project_root.exists())
+        print("Project root exists:", bool(project_root and project_root.exists()))
         print("================================================\n")
 
         # --------------------------------------------------
-        # READ ACTUAL FILES FROM DISK & DB
+        # READ FILES: DATABASE FIRST, DISK AS DEV FALLBACK
         # --------------------------------------------------
 
-        target_file_paths = set()
+        # The database is the source of truth. generated_projects/ only exists
+        # on the machine that wrote it, and on a hosted app platform that path
+        # is a container's temporary filesystem: empty after a redeploy and
+        # never shared between instances. Reading the stored contents keeps a
+        # project previewable for as long as its rows exist.
+        seen_paths = set()
 
-        for generated_file in generated_files:
-            stored_path = Path(generated_file.file_path)
-            if stored_path.is_absolute():
-                target_file_paths.add(stored_path.resolve())
-            else:
-                target_file_paths.add((backend_root / stored_path).resolve())
+        def relative_for(stored_path):
+            """Project-relative path for a stored file_path value."""
+            resolved = (
+                stored_path
+                if stored_path.is_absolute()
+                else (backend_root / stored_path)
+            )
 
-        # Also discover any physical files on disk under project_root
-        if project_root.exists() and project_root.is_dir():
-            for p in project_root.rglob("*"):
-                if p.is_file():
-                    if any(ig in p.parts for ig in [".git", "node_modules", ".venv", "__pycache__", "dist", "build"]):
-                        continue
-                    target_file_paths.add(p.resolve())
+            try:
+                resolved = resolved.resolve()
+            except OSError:
+                pass
 
-        for file_path in target_file_paths:
-            # If not found directly, try project_root fallback
-            if not file_path.exists():
+            if project_root_resolved is not None:
                 try:
-                    parts = file_path.parts
-                    if "generated_projects" in parts:
-                        idx = parts.index("generated_projects")
-                        # parts after project name
-                        if len(parts) > idx + 2:
-                            rel_sub = parts[idx + 2:]
-                            fallback = project_root / Path(*rel_sub)
-                            if fallback.exists():
-                                file_path = fallback.resolve()
-                except Exception:
+                    return resolved.relative_to(project_root_resolved)
+                except ValueError:
                     pass
 
-            if not file_path.exists() or not file_path.is_file():
-                continue
+            # Fall back to splitting on the known layout segment, which still
+            # works when the directory is gone and resolve() cannot match it.
+            parts = resolved.parts
+            if "generated_projects" in parts:
+                index = parts.index("generated_projects")
+                if len(parts) > index + 2:
+                    return Path(*parts[index + 2:])
 
-            try:
-                contents = file_path.read_text(encoding="utf-8")
-            except (UnicodeDecodeError, OSError):
-                continue
+            return Path(resolved.name)
 
-            try:
-                relative_path = file_path.relative_to(project_root)
-            except ValueError:
-                relative_path = Path(file_path.name)
-
-            files.append(
-                {
-                    "path": relative_path.as_posix(),
-                    "contents": contents
-                }
+        def add_file(relative_path, contents):
+            key = (
+                relative_path.as_posix()
+                if isinstance(relative_path, Path)
+                else str(relative_path)
             )
+
+            if not key or key in seen_paths:
+                return
+
+            seen_paths.add(key)
+            files.append({"path": key, "contents": contents})
+
+        # 1. Rows that carry their own content - the normal case.
+        for generated_file in generated_files:
+            if generated_file.contents is None:
+                continue
+
+            add_file(
+                relative_for(Path(generated_file.file_path)),
+                generated_file.contents,
+            )
+
+        # 2. Rows saved before the contents column existed, plus files present
+        #    on disk but never recorded. Only reachable where the disk really
+        #    is the one that generated them, i.e. local development.
+        if project_root_resolved is not None:
+            for generated_file in generated_files:
+                if generated_file.contents is not None:
+                    continue
+
+                relative_path = relative_for(Path(generated_file.file_path))
+                candidate = project_root_resolved / relative_path
+
+                if not candidate.is_file():
+                    continue
+
+                try:
+                    add_file(relative_path, candidate.read_text(encoding="utf-8"))
+                except (UnicodeDecodeError, OSError):
+                    continue
+
+            for path_on_disk in project_root_resolved.rglob("*"):
+                if not path_on_disk.is_file():
+                    continue
+
+                if any(
+                    ignored in path_on_disk.parts
+                    for ignored in (".git", "node_modules", ".venv", "__pycache__", "dist", "build")
+                ):
+                    continue
+
+                try:
+                    contents = path_on_disk.read_text(encoding="utf-8")
+                except (UnicodeDecodeError, OSError):
+                    continue
+
+                try:
+                    relative_path = path_on_disk.relative_to(project_root_resolved)
+                except ValueError:
+                    relative_path = Path(path_on_disk.name)
+
+                add_file(relative_path, contents)
 
         # --------------------------------------------------
         # NO VALID FILES
@@ -203,8 +260,9 @@ def get_project_files(
             raise HTTPException(
                 status_code=404,
                 detail=(
-                    "Generated files exist in database "
-                    "but could not be read from disk"
+                    "Project has no generated file contents yet. They are "
+                    "either still being written or were generated before file "
+                    "contents were stored in the database."
                 )
             )
 

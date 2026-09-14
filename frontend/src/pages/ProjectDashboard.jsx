@@ -1,716 +1,258 @@
-import { useParams } from "react-router-dom";
-import { useEffect, useState, useCallback } from "react";
-
-import ProjectHeader from "../components/dashboard/ProjectHeader";
-import ProjectStats from "../components/dashboard/ProjectStats";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { AlertTriangle, RefreshCw, X } from "lucide-react";
 
 import { getProject, getFile } from "../services/api";
 
-import GeneratedFiles from "../components/dashboard/GeneratedFiles";
-import FileViewer from "../components/dashboard/FileViewer";
+import EmptyState from "../components/ui/EmptyState";
+import { Skeleton } from "../components/ui/Skeleton";
+
+import ProjectHeader from "../components/dashboard/ProjectHeader";
 import AgentTabs from "../components/dashboard/AgentTabs";
+import OverviewPanel from "../components/dashboard/OverviewPanel";
+import ReportView from "../components/dashboard/ReportView";
+import FileExplorer from "../components/dashboard/FileExplorer";
+import FileViewer from "../components/dashboard/FileViewer";
 
-import ResearchReport from "../components/dashboard/reports/ResearchReport";
-import MarketingReport from "../components/dashboard/reports/MarketingReport";
-import FinanceReport from "../components/dashboard/reports/FinanceReport";
-import CEOReport from "../components/dashboard/reports/CEOReport";
-import CodingReport from "../components/dashboard/reports/CodingReport";
-import OverviewTab from "../components/dashboard/reports/OverviewTab";
+/* WebPreview pulls in @webcontainer/api and a large bootstrapping
+   flow. It is only needed when the modal opens, so keep it out of
+   the initial chunk. */
+const WebPreview = lazy(() => import("../components/preview/WebPreview"));
 
-import WebPreview from "../components/preview/WebPreview";
+/* ==========================================================
+   ProjectDashboard — one project: reports, files, preview.
 
+   GET /projects/{thread_id} returns:
+   {
+     success, project, research, marketing,
+     finance, coding, ceo, files
+   }
+========================================================== */
+
+const REPORT_TABS = ["research", "marketing", "finance", "coding", "ceo"];
 
 function ProjectDashboard() {
-
     const { threadId } = useParams();
 
-    const [project, setProject] = useState(null);
-
-    const [selectedFile, setSelectedFile] = useState(null);
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [nonce, setNonce] = useState(0);
 
     const [activeTab, setActiveTab] = useState("overview");
 
-    const [loading, setLoading] = useState(true);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [fileLoading, setFileLoading] = useState(false);
 
-    const [refreshing, setRefreshing] = useState(false);
-
-    // WebContainer preview state
     const [showPreview, setShowPreview] = useState(false);
 
-
-    // ==========================================================
-    // LOAD PROJECT
-    // ==========================================================
-
-    const loadProject = useCallback(async (showLoading = false) => {
-
-        if (!threadId) {
-            return;
-        }
-
-        try {
-
-            if (showLoading) {
-                setLoading(true);
-            }
-
-            const response = await getProject(threadId);
-
-            console.log("📦 PROJECT RESPONSE:", response);
-
-
-            // ==================================================
-            // NORMALIZE BACKEND RESPONSE
-            // ==================================================
-
-            /*
-             * Backend response is expected to look roughly like:
-             *
-             * {
-             *     success: true,
-             *     project: {...},
-             *     research: {...},
-             *     marketing: {...},
-             *     finance: {...},
-             *     coding: {...},
-             *     ceo: {...},
-             *     files: [...]
-             * }
-             *
-             * The actual project metadata is inside response.project,
-             * while reports/files may be siblings.
-             */
-
-            const baseProject = response?.project || response;
-
-
-            const projectData = {
-
-                ...baseProject,
-
-                // Reports
-                research:
-                    response?.research ??
-                    baseProject?.research ??
-                    null,
-
-                marketing:
-                    response?.marketing ??
-                    baseProject?.marketing ??
-                    null,
-
-                finance:
-                    response?.finance ??
-                    baseProject?.finance ??
-                    null,
-
-                coding:
-                    response?.coding ??
-                    baseProject?.coding ??
-                    null,
-
-                ceo:
-                    response?.ceo ??
-                    response?.final_report ??
-                    baseProject?.ceo ??
-                    null,
-
-                // Generated files
-                files:
-                    response?.files ??
-                    baseProject?.files ??
-                    [],
-
-            };
-
-
-            console.log(
-                "📊 NORMALIZED PROJECT DATA:",
-                projectData
-            );
-
-
-            console.log(
-                "💻 CODING REPORT:",
-                projectData.coding
-            );
-
-
-            console.log(
-                "📁 GENERATED FILES:",
-                projectData.files
-            );
-
-
-            console.log(
-                "🔬 RESEARCH REPORT:",
-                projectData.research
-            );
-
-
-            console.log(
-                "📣 MARKETING REPORT:",
-                projectData.marketing
-            );
-
-
-            console.log(
-                "💰 FINANCE REPORT:",
-                projectData.finance
-            );
-
-
-            console.log(
-                "👔 CEO REPORT:",
-                projectData.ceo
-            );
-
-
-            setProject(projectData);
-
-
-            // ==================================================
-            // LOAD FIRST GENERATED FILE
-            // ==================================================
-
-            if (
-                projectData.files &&
-                Array.isArray(projectData.files) &&
-                projectData.files.length > 0
-            ) {
-
-                const firstFile = projectData.files[0];
-
-
-                /*
-                 * Some APIs return:
-                 *
-                 * { id: 1, file_name: "App.jsx" }
-                 *
-                 * while others return:
-                 *
-                 * { file_id: 1 }
-                 */
-
-                const fileId =
-                    firstFile?.id ??
-                    firstFile?.file_id;
-
-
-                if (fileId) {
-
-                    try {
-
-                        const fileResponse = await getFile(fileId);
-
-                        console.log(
-                            "📄 FIRST FILE:",
-                            fileResponse
-                        );
-
-
-                        setSelectedFile(
-                            fileResponse?.file ||
-                            fileResponse
-                        );
-
-
-                    } catch (fileError) {
-
-                        console.error(
-                            "❌ Failed to load first file:",
-                            fileError
-                        );
-
-                        setSelectedFile(null);
-
-                    }
-
-                }
-
-            } else {
-
-                setSelectedFile(null);
-
-            }
-
-
-        } catch (err) {
-
-            console.error(
-                "❌ Failed to load project:",
-                err
-            );
-
-        } finally {
-
-            if (showLoading) {
-                setLoading(false);
-            }
-
-        }
-
-    }, [threadId]);
-
-
-    // ==========================================================
-    // INITIAL LOAD
-    // ==========================================================
+    /* ---------------- load ---------------- */
 
     useEffect(() => {
+        if (!threadId) return undefined;
 
-        loadProject(true);
+        let alive = true;
 
-    }, [loadProject]);
+        getProject(threadId)
+            .then((response) => {
+                if (!alive) return;
 
+                setData({
+                    project: response?.project || null,
+                    research: response?.research ?? null,
+                    marketing: response?.marketing ?? null,
+                    finance: response?.finance ?? null,
+                    coding: response?.coding ?? null,
+                    ceo: response?.ceo ?? null,
+                    files: Array.isArray(response?.files) ? response.files : [],
+                });
 
-    // ==========================================================
-    // AUTO REFRESH WHILE WORKFLOW IS RUNNING
-    // ==========================================================
+                setError(null);
+            })
+            .catch((err) => {
+                if (!alive) return;
 
-    useEffect(() => {
-
-        if (!threadId || !project) {
-            return;
-        }
-
-
-        if (
-            project.status === "completed" ||
-            project.status === "failed"
-        ) {
-            return;
-        }
-
-
-        setRefreshing(true);
-
-
-        const interval = setInterval(async () => {
-
-            console.log(
-                "🔄 Refreshing project..."
-            );
-
-            await loadProject(false);
-
-        }, 3000);
-
+                setError(err.message || "Unable to load this project.");
+            })
+            .finally(() => {
+                if (alive) setLoading(false);
+            });
 
         return () => {
-
-            clearInterval(interval);
-
-            setRefreshing(false);
-
+            alive = false;
         };
+    }, [threadId, nonce]);
 
-    }, [
-        threadId,
-        project?.status,
-        loadProject
-    ]);
+    /* Manual retry is an event handler, so a synchronous
+       setState here is intentional and correct. */
+    function reload() {
+        setLoading(true);
+        setError(null);
+        setNonce((value) => value + 1);
+    }
 
+    /* ---------------- open a file ---------------- */
 
-    // ==========================================================
-    // OPEN FILE
-    // ==========================================================
+    async function handleOpenFile(file) {
+        if (!file?.id) return;
 
-    async function openFile(fileId) {
-
-        console.log(
-            "📂 Opening file:",
-            fileId
-        );
-
+        setFileLoading(true);
 
         try {
-
-            const response = await getFile(fileId);
-
-            console.log(
-                "📄 FILE RESPONSE:",
-                response
-            );
-
-
-            setSelectedFile(
-                response?.file ||
-                response
-            );
-
-
+            const response = await getFile(file.id);
+            setSelectedFile(response?.file || null);
         } catch (err) {
-
-            console.error(
-                "❌ Failed to open file:",
-                err
-            );
-
+            setError(err.message || "Unable to read that file.");
+            setSelectedFile(null);
+        } finally {
+            setFileLoading(false);
         }
-
     }
 
+    /* ---------------- states ---------------- */
 
-    // ==========================================================
-    // LOADING
-    // ==========================================================
-
-    if (loading) {
-
+    /* Skeleton covers first load AND a missing payload, but must not
+       mask the error screen below. */
+    if ((loading || !data) && !error) {
         return (
-
-            <div className="flex h-screen items-center justify-center">
-
-                <div className="text-center">
-
-                    <div className="mb-3 text-lg font-semibold">
-                        Loading Project...
-                    </div>
-
-                    <div className="text-sm text-gray-500">
-                        Preparing your AI Company workspace
-                    </div>
-
+            <div className="space-y-6">
+                <Skeleton className="h-44 w-full" />
+                <Skeleton className="h-11 w-full max-w-3xl" />
+                <div className="grid gap-5 lg:grid-cols-2">
+                    <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-64 w-full" />
                 </div>
-
             </div>
-
         );
-
     }
 
-
-    // ==========================================================
-    // PROJECT NOT FOUND
-    // ==========================================================
-
-    if (!project) {
-
+    if (error && !data) {
         return (
+            <div className="mx-auto max-w-2xl py-10">
+                <EmptyState
+                    icon={AlertTriangle}
+                    title="Project unavailable"
+                    description={error}
+                    action={
+                        <div className="flex gap-3">
+                            <button onClick={reload} className="btn-ghost text-xs">
+                                <RefreshCw size={14} />
+                                Retry
+                            </button>
 
-            <div className="flex h-screen items-center justify-center">
-
-                <div className="text-center">
-
-                    <div className="text-xl font-semibold">
-                        Project Not Found
-                    </div>
-
-                    <div className="mt-2 text-gray-500">
-                        No project exists for this workflow.
-                    </div>
-
-                </div>
-
+                            <Link to="/projects" className="btn-primary text-xs">
+                                Back to projects
+                            </Link>
+                        </div>
+                    }
+                />
             </div>
-
         );
-
     }
 
+    const { project, files } = data;
 
-    // ==========================================================
-    // DEBUG
-    // ==========================================================
-
-    console.log(
-        "🎯 CURRENT PROJECT:",
-        project
-    );
-
-
-    // ==========================================================
-    // RENDER
-    // ==========================================================
+    const reports = {
+        research: data.research,
+        marketing: data.marketing,
+        finance: data.finance,
+        coding: data.coding,
+        ceo: data.ceo,
+    };
 
     return (
-
-        <div className="mx-auto max-w-7xl space-y-8">
-
-
-            {/* ==================================================
-                HEADER
-            ================================================== */}
-
+        <div className="space-y-6">
             <ProjectHeader
                 project={project}
+                fileCount={files.length}
+                onPreview={() => setShowPreview(true)}
             />
 
-
-            {/* ==================================================
-                STATUS
-            ================================================== */}
-
-            {refreshing && (
-
-                <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-
-                    AI agents are still working...
-                    Project data will refresh automatically.
-
+            {error && (
+                <div className="panel border-amber-400/25 bg-amber-500/[0.06] px-5 py-3.5 text-sm text-amber-200">
+                    {error}
                 </div>
-
             )}
 
-
-            {project.status === "completed" && (
-
-                <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-
-                    ✓ Workflow completed successfully.
-
-                </div>
-
-            )}
-
-
-            {project.status === "failed" && (
-
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-
-                    ✕ Workflow failed.
-
-                </div>
-
-            )}
-
-
-            {/* ==================================================
-                STATS
-            ================================================== */}
-
-            {/*
-            <ProjectStats
-                project={project}
+            <AgentTabs
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                fileCount={files.length}
             />
-            */}
 
-
-            {/* ==================================================
-                WEBSITE PREVIEW BUTTON
-            ================================================== */}
-
-            {project.status === "completed" && (
-
-                <div className="flex justify-end">
-
-                    <button
-                        onClick={() => setShowPreview(true)}
-                        className="inline-flex items-center gap-2 rounded-lg bg-black px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800"
-                    >
-
-                        <span>
-                            ▶
-                        </span>
-
-                        Preview Website
-
-                    </button>
-
-                </div>
-
-            )}
-
-
-            {/* ==================================================
-                TABS
-            ================================================== */}
-
-            <div className="space-y-8">
-
-                <AgentTabs
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                />
-
-
-                {/* ==================================================
-                    OVERVIEW
-                ================================================== */}
-
+            {/* ---------------- tab body ---------------- */}
+            <div>
                 {activeTab === "overview" && (
-
-                    <OverviewTab
+                    <OverviewPanel
                         project={project}
+                        reports={reports}
+                        fileCount={files.length}
                     />
-
                 )}
 
-
-                {/* ==================================================
-                    FILES
-                ================================================== */}
+                {REPORT_TABS.includes(activeTab) && (
+                    <ReportView
+                        agent={activeTab}
+                        title={activeTab}
+                        report={reports[activeTab]}
+                    />
+                )}
 
                 {activeTab === "files" && (
+                    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)]">
+                        <FileExplorer
+                            files={files}
+                            onOpen={handleOpenFile}
+                            selectedId={selectedFile?.id}
+                        />
 
-                    <div className="grid gap-8 lg:grid-cols-3">
-
-
-                        <div>
-
-                            <GeneratedFiles
-                                files={project.files || []}
-                                onOpen={openFile}
-                            />
-
-                        </div>
-
-
-                        <div className="lg:col-span-2">
-
-                            <FileViewer
-                                file={selectedFile}
-                            />
-
-                        </div>
-
-
+                        <FileViewer file={selectedFile} loading={fileLoading} />
                     </div>
-
                 )}
-
-
-                {/* ==================================================
-                    RESEARCH
-                ================================================== */}
-
-                {activeTab === "research" && (
-
-                    <ResearchReport
-                        report={project.research}
-                    />
-
-                )}
-
-
-                {/* ==================================================
-                    MARKETING
-                ================================================== */}
-
-                {activeTab === "marketing" && (
-
-                    <MarketingReport
-                        report={project.marketing}
-                    />
-
-                )}
-
-
-                {/* ==================================================
-                    FINANCE
-                ================================================== */}
-
-                {activeTab === "finance" && (
-
-                    <FinanceReport
-                        report={project.finance}
-                    />
-
-                )}
-
-
-                {/* ==================================================
-                    CODING
-                ================================================== */}
-
-                {activeTab === "coding" && (
-
-                    <CodingReport
-                        report={project.coding}
-                    />
-
-                )}
-
-
-                {/* ==================================================
-                    CEO
-                ================================================== */}
-
-                {activeTab === "ceo" && (
-
-                    <CEOReport
-                        report={project.ceo}
-                    />
-
-                )}
-
             </div>
 
-
-            {/* ==================================================
-                WEB CONTAINER PREVIEW MODAL
-            ================================================== */}
-
+            {/* ---------------- preview modal ---------------- */}
             {showPreview && (
-
-                <div className="fixed inset-0 z-50 bg-black/60 p-4">
-
-                    <div className="mx-auto flex h-full max-w-7xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-
-
-                        {/* ==================================================
-                            PREVIEW HEADER
-                        ================================================== */}
-
-                        <div className="flex items-center justify-between border-b px-5 py-3">
-
-
-                            <div>
-
-                                <h2 className="text-lg font-semibold text-gray-900">
-
-                                    Live Website Preview
-
+                <div className="fixed inset-0 z-[60] flex flex-col bg-black/80 p-3 backdrop-blur-sm sm:p-6">
+                    <div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-slate-400/15 bg-[#0b0e1c] shadow-2xl">
+                        <div className="flex items-center justify-between gap-4 border-b border-slate-400/10 px-5 py-3.5">
+                            <div className="min-w-0">
+                                <h2 className="truncate text-sm font-bold text-slate-100">
+                                    Live preview
                                 </h2>
 
-
-                                <p className="text-xs text-gray-500">
-
-                                    Running your generated frontend inside WebContainer
-
+                                <p className="truncate text-xs text-slate-500">
+                                    Running {project?.project_name || "your generated app"} inside WebContainer
                                 </p>
-
                             </div>
-
 
                             <button
                                 onClick={() => setShowPreview(false)}
-                                className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
+                                className="icon-btn shrink-0"
+                                aria-label="Close preview"
                             >
-
-                                ✕ Close
-
+                                <X size={16} />
                             </button>
-
-
                         </div>
-
-
-                        {/* ==================================================
-                            WEB PREVIEW
-                        ================================================== */}
 
                         <div className="min-h-0 flex-1">
-
-                            <WebPreview
-                                threadId={threadId}
-                            />
-
+                            <Suspense
+                                fallback={
+                                    <div className="flex h-full items-center justify-center gap-3 text-sm text-slate-500">
+                                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-600 border-t-violet-400" />
+                                        Loading preview runtime…
+                                    </div>
+                                }
+                            >
+                                <WebPreview threadId={threadId} />
+                            </Suspense>
                         </div>
-
-
                     </div>
-
                 </div>
-
             )}
-
         </div>
-
     );
-
 }
 
-
 export default ProjectDashboard;
+

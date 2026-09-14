@@ -1,248 +1,182 @@
 import { NavLink } from "react-router-dom";
 import {
-    Sparkles,
     LayoutDashboard,
-    Wand2,
     FolderOpen,
-    Bot,
     Settings,
-    Circle
+    Sparkles,
+    Bot,
+    X,
+    LogOut,
 } from "lucide-react";
 
-const navigation = [
+import { useAuth } from "../../context/AuthContext";
+import { initials } from "../../lib/format";
+import { cn } from "../../lib/cn";
+
+/* ==========================================================
+   Navigation model — every path here exists in App.jsx
+========================================================== */
+
+const GROUPS = [
     {
-        name: "Dashboard",
-        icon: LayoutDashboard,
-        path: "/"
+        label: "Workspace",
+        items: [
+            { name: "Dashboard", icon: LayoutDashboard, path: "/", end: true },
+            { name: "Generate", icon: Sparkles, path: "/generate" },
+            { name: "Projects", icon: FolderOpen, path: "/projects" },
+            { name: "Agents", icon: Bot, path: "/agents" },
+        ],
     },
     {
-        name: "Generate",
-        icon: Wand2,
-        path: "/generate"
+        label: "Account",
+        items: [{ name: "Settings", icon: Settings, path: "/settings" }],
     },
-    {
-        name: "Projects",
-        icon: FolderOpen,
-        path: "/projects"
-    },
-    {
-        name: "Agents",
-        icon: Bot,
-        path: "/agents"
-    },
-    {
-        name: "Settings",
-        icon: Settings,
-        path: "/settings"
-    }
 ];
 
-function Sidebar() {
+function Sidebar({ open = false, onClose = () => {} }) {
+    const { user, logout, isAuthenticated } = useAuth();
+
+    const name = user?.name || "Team member";
+    const email = user?.email || "";
+
     return (
-        <aside
-            className="
-                hidden
-                lg:flex
-                w-[280px]
-                shrink-0
-                flex-col
-                border-r
-                border-slate-200
-                bg-white
-            "
-        >
-            {/* Logo */}
+        <>
+            {/* Mobile scrim */}
+            <div
+                onClick={onClose}
+                className={cn(
+                    "fixed inset-0 z-40 bg-black/70 backdrop-blur-sm transition-opacity lg:hidden",
+                    open ? "opacity-100" : "pointer-events-none opacity-0"
+                )}
+            />
 
-            <div className="border-b border-slate-200 px-7 py-7">
-
-                <div className="flex items-center gap-4">
-
-                    <div
-                        className="
-                            flex
-                            h-12
-                            w-12
-                            items-center
-                            justify-center
-                            rounded-2xl
-                            bg-gradient-to-br
-                            from-violet-600
-                            to-indigo-600
-                            text-white
-                            shadow-lg
-                        "
-                    >
-                        <Sparkles size={22} />
+            <aside
+                className={cn(
+                    "fixed left-0 top-0 z-50 flex h-full w-64 shrink-0 flex-col",
+                    "border-r border-slate-400/10 bg-[#080a15]/95 backdrop-blur-xl",
+                    "transition-transform duration-300 lg:translate-x-0",
+                    open ? "translate-x-0" : "-translate-x-full"
+                )}
+            >
+                {/* Brand */}
+                <div className="flex h-16 items-center gap-3 border-b border-slate-400/10 px-5">
+                    <div className="brand-gradient flex h-9 w-9 items-center justify-center rounded-xl shadow-lg shadow-violet-900/40">
+                        <Sparkles size={18} className="text-white" />
                     </div>
 
-                    <div>
-
-                        <h1 className="text-xl font-bold text-slate-900">
+                    <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold tracking-tight text-slate-100">
                             AI Company OS
-                        </h1>
-
-                        <p className="text-sm text-slate-500">
-                            Enterprise Platform
                         </p>
-
+                        <p className="truncate text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500">
+                            Autonomous Startup Platform
+                        </p>
                     </div>
 
+                    <button
+                        onClick={onClose}
+                        className="icon-btn h-8 w-8 lg:hidden"
+                        aria-label="Close navigation"
+                    >
+                        <X size={16} />
+                    </button>
                 </div>
 
-            </div>
+                {/* Quick action */}
+                <div className="px-4 pt-5">
+                    <NavLink to="/generate" onClick={onClose} className="btn-primary w-full text-sm">
+                        <Sparkles size={16} />
+                        New Startup
+                    </NavLink>
+                </div>
 
-            {/* Navigation */}
+                {/* Nav */}
+                <nav className="no-scrollbar flex-1 space-y-7 overflow-y-auto px-4 py-6">
+                    {GROUPS.map((group) => (
+                        <div key={group.label}>
+                            <p className="eyebrow mb-2.5 px-3 text-[10px]">
+                                {group.label}
+                            </p>
 
-            <div className="flex-1 overflow-y-auto px-5 py-8">
+                            <div className="space-y-1">
+                                {group.items.map((item) => {
+                                    const Icon = item.icon;
 
-                <p className="mb-4 px-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
-                    Navigation
-                </p>
+                                    return (
+                                        <NavLink
+                                            key={item.path}
+                                            to={item.path}
+                                            end={item.end}
+                                            onClick={onClose}
+                                            className={({ isActive }) =>
+                                                cn(
+                                                    "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+                                                    isActive
+                                                        ? "bg-gradient-to-r from-violet-600/25 to-indigo-500/5 text-white ring-1 ring-inset ring-violet-400/30"
+                                                        : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-100"
+                                                )
+                                            }
+                                        >
+                                            {({ isActive }) => (
+                                                <>
+                                                    <Icon
+                                                        size={17}
+                                                        className={cn(
+                                                            "shrink-0 transition",
+                                                            isActive
+                                                                ? "text-violet-300"
+                                                                : "text-slate-500 group-hover:text-violet-300"
+                                                        )}
+                                                    />
 
-                <nav className="space-y-2">
+                                                    <span className="truncate">{item.name}</span>
 
-                    {navigation.map((item) => {
-
-                        const Icon = item.icon;
-
-                        return (
-
-                            <NavLink
-                                key={item.path}
-                                to={item.path}
-                                className={({ isActive }) =>
-                                    `
-                                    group
-                                    flex
-                                    items-center
-                                    gap-4
-                                    rounded-2xl
-                                    px-4
-                                    py-3
-                                    transition-all
-                                    duration-200
-                                    ${
-                                        isActive
-                                            ? "bg-violet-600 text-white shadow-lg"
-                                            : "text-slate-600 hover:bg-violet-50 hover:text-violet-600"
-                                    }
-                                `
-                                }
-                            >
-
-                                <Icon
-                                    size={20}
-                                    className="transition-transform group-hover:scale-110"
-                                />
-
-                                <span className="font-medium">
-                                    {item.name}
-                                </span>
-
-                            </NavLink>
-
-                        );
-                    })}
-
+                                                    {isActive && (
+                                                        <span className="ml-auto h-1.5 w-1.5 rounded-full bg-violet-400" />
+                                                    )}
+                                                </>
+                                            )}
+                                        </NavLink>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
                 </nav>
 
-                {/* Workspace */}
 
-                <div className="mt-10">
-
-                    <p className="mb-4 px-3 text-xs font-semibold uppercase tracking-widest text-slate-400">
-                        Workspace
-                    </p>
-
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-
+                {/* Identity */}
+                <div className="border-t border-slate-400/10 p-4">
+                    <div className="rounded-2xl bg-white/[0.03] p-3 ring-1 ring-inset ring-slate-400/10">
                         <div className="flex items-center gap-3">
-
-                            <div
-                                className="
-                                    flex
-                                    h-11
-                                    w-11
-                                    items-center
-                                    justify-center
-                                    rounded-xl
-                                    bg-violet-600
-                                    text-white
-                                    font-bold
-                                "
-                            >
-                                A
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white">
+                                {initials(name)}
                             </div>
 
-                            <div>
-
-                                <h3 className="font-semibold text-slate-800">
-                                    AI Startup
-                                </h3>
-
-                                <p className="text-sm text-slate-500">
-                                    Professional Plan
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold text-slate-100">
+                                    {name}
                                 </p>
-
+                                <p className="truncate text-xs text-slate-500">
+                                    {email || (isAuthenticated ? "Active session" : "Signed out")}
+                                </p>
                             </div>
 
+                            <button
+                                onClick={logout}
+                                title="Log out"
+                                aria-label="Log out"
+                                className="icon-btn h-9 w-9 hover:!border-red-400/40 hover:!bg-red-500/10 hover:!text-red-300"
+                            >
+                                <LogOut size={15} />
+                            </button>
                         </div>
-
                     </div>
-
                 </div>
-
-            </div>
-
-            {/* User */}
-
-            <div className="border-t border-slate-200 p-5">
-
-                <div className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4">
-
-                    <div
-                        className="
-                            flex
-                            h-12
-                            w-12
-                            items-center
-                            justify-center
-                            rounded-full
-                            bg-violet-600
-                            font-bold
-                            text-white
-                        "
-                    >
-                        S
-                    </div>
-
-                    <div className="flex-1">
-
-                        <h3 className="font-semibold text-slate-800">
-                            Simarjit Singh
-                        </h3>
-
-                        <div className="mt-1 flex items-center gap-2">
-
-                            <Circle
-                                size={8}
-                                className="fill-green-500 text-green-500"
-                            />
-
-                            <span className="text-sm text-slate-500">
-                                Online
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </aside>
+            </aside>
+        </>
     );
 }
 
 export default Sidebar;
+

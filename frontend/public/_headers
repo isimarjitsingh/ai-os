@@ -1,0 +1,11 @@
+# Static-host headers for the built frontend.
+#
+# vite.config.js sets these under `server:`, which is the dev server only. The
+# production bundle is served by Netlify/Vercel/nginx, none of which read that
+# block - without them window.crossOriginIsolated stays false and
+# src/components/preview/WebPreview.jsx throws
+# "WebContainer requires cross-origin isolation headers (COOP/COEP)".
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: cross-origin

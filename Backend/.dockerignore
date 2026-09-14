@@ -1,0 +1,35 @@
+# Keep the build context small and secrets out of the image.
+#
+# .env is the important one: baking it in would ship the real database password
+# and every model API key inside a layer that anyone with registry access can
+# read back out, and would override the platform's own environment variables.
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Generated projects are runtime output written into the container, not source.
+generated_projects/
+uploads/
+*.log
+uvicorn.log
+
+.git/
+.gitignore
+.vscode/
+.idea/
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.db
+*.sqlite3
+*.sql
+dump.rdb
+.python-version
+langgraph.json

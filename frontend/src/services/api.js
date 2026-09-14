@@ -1,170 +1,98 @@
+import { API_URL } from "./config";
 import { getAuthHeaders, getToken } from "./auth";
 
-const API_URL = "http://localhost:8000";
+/* ==========================================================
+   SHARED REQUEST HELPER
 
-// ==========================================================
-// GENERATE STARTUP
-// ==========================================================
+   Every call below talks to the real FastAPI surface:
 
-export async function generateProject(userGoal) {
-    const response = await fetch(
-        `${API_URL}/generate`,
-        {
-            method: "POST",
+     POST  /generate
+     GET   /projects
+     GET   /projects/{thread_id}
+     GET   /files/{file_id}
+     GET   /projects/{thread_id}/files
+     GET   /stream/{thread_id}   (SSE)
+========================================================== */
 
-            headers: {
-                "Content-Type": "application/json",
-                ...getAuthHeaders(),
-            },
+async function request(path, { method = "GET", body, auth = true } = {}) {
+    const response = await fetch(`${API_URL}${path}`, {
+        method,
 
-            credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+            ...(auth ? getAuthHeaders() : {}),
+        },
 
-            body: JSON.stringify({
-                user_goal: userGoal,
-            }),
-        }
-    );
+        credentials: "include",
 
-    const result = await response.json();
+        body: body === undefined ? undefined : JSON.stringify(body),
+    });
+
+    const result = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-        throw new Error(
-            result.detail || "Failed to generate project"
-        );
+        const detail =
+            typeof result.detail === "string"
+                ? result.detail
+                : result.detail?.message || `${method} ${path} failed (${response.status})`;
+
+        const error = new Error(detail);
+        error.status = response.status;
+        throw error;
     }
 
     return result;
 }
 
+/* ==========================================================
+   GENERATE STARTUP
+   Returns: { success, thread_id, ... }
+========================================================== */
 
-// ==========================================================
-// WORKFLOW STREAM URL
-// ==========================================================
+export async function generateProject(userGoal) {
+    return request("/generate", {
+        method: "POST",
+        body: { user_goal: userGoal },
+    });
+}
+
+/* ==========================================================
+   WORKFLOW STREAM URL (SSE)
+   EventSource cannot send headers, so the JWT travels as a
+   query param — which get_current_user() explicitly accepts.
+========================================================== */
 
 export function getWorkflowStream(threadId, userGoal) {
     const token = getToken();
 
-    const tokenParam = token
-        ? `&token=${encodeURIComponent(token)}`
-        : "";
+    const params = new URLSearchParams({ user_goal: userGoal ?? "" });
 
-    return (
-        `${API_URL}/stream/${threadId}` +
-        `?user_goal=${encodeURIComponent(userGoal)}` +
-        tokenParam
-    );
+    if (token) params.set("token", token);
+
+    return `${API_URL}/stream/${threadId}?${params.toString()}`;
 }
 
-
-// ==========================================================
-// FETCH SINGLE PROJECT
-// ==========================================================
-
-export async function getProject(threadId) {
-    const response = await fetch(
-        `${API_URL}/projects/${threadId}`,
-        {
-            headers: {
-                ...getAuthHeaders(),
-            },
-
-            credentials: "include",
-        }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-        throw new Error(
-            result.detail || "Unable to fetch project"
-        );
-    }
-
-    return result;
-}
-
-
-// ==========================================================
-// FETCH ALL PROJECTS
-// ==========================================================
+/* ==========================================================
+   PROJECTS
+========================================================== */
 
 export async function getProjects() {
-    const response = await fetch(
-        `${API_URL}/projects`,
-        {
-            headers: {
-                ...getAuthHeaders(),
-            },
-
-            credentials: "include",
-        }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-        throw new Error(
-            result.detail || "Unable to fetch projects"
-        );
-    }
-
-    return result;
+    const data = await request("/projects");
+    return Array.isArray(data) ? data : [];
 }
 
+export async function getProject(threadId) {
+    return request(`/projects/${threadId}`);
+}
 
-// ==========================================================
-// FETCH SINGLE GENERATED FILE
-// ==========================================================
+/* ==========================================================
+   FILES
+========================================================== */
 
 export async function getFile(fileId) {
-    const response = await fetch(
-        `${API_URL}/files/${fileId}`,
-        {
-            headers: {
-                ...getAuthHeaders(),
-            },
-
-            credentials: "include",
-        }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-        throw new Error(
-            result.detail || "Unable to fetch file"
-        );
-    }
-
-    return result;
+    return request(`/files/${fileId}`);
 }
 
-
-// ==========================================================
-// PREVIEW - FETCH GENERATED PROJECT FILES
-// ==========================================================
-
 export async function getProjectFiles(threadId) {
-    const response = await fetch(
-        `${API_URL}/projects/${threadId}/files`,
-        {
-            method: "GET",
-
-            headers: {
-                ...getAuthHeaders(),
-            },
-
-            credentials: "include",
-        }
-    );
-
-    const result = await response.json();
-
-    if (!response.ok) {
-        throw new Error(
-            result.detail || "Unable to fetch project files"
-        );
-    }
-
-    return result;
+    return request(`/projects/${threadId}/files`);
 }

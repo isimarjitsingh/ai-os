@@ -1,0 +1,60 @@
+# Root ignores. Backend/.gitignore and frontend/.gitignore cover their own
+# trees; this exists so anything created at the repo root, or in a future
+# top-level directory, is not accidentally committed.
+
+# ==========================================================
+# SECRETS
+# ==========================================================
+# Backend/.env is the one that matters: it holds the Neon password and every
+# model API key. Note VITE_* vars are inlined into the browser bundle at build
+# time, so frontend env files are public by design, not secret.
+.env
+.env.*
+!.env.example
+
+# ==========================================================
+# PYTHON
+# ==========================================================
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+# ==========================================================
+# NODE / BUILD OUTPUT
+# ==========================================================
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+
+# ==========================================================
+# LOGS AND TRANSIENT RUN OUTPUT
+# ==========================================================
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# ==========================================================
+# LOCAL DATA
+# ==========================================================
+*.sqlite3
+*.db
+*.sql
+dump.rdb
+generated_projects/
+uploads/
+
+# ==========================================================
+# EDITOR / OS
+# ==========================================================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini

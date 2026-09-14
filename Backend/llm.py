@@ -6,6 +6,9 @@ import httpx
 from dotenv import load_dotenv
 from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI
+from langchain_xai import ChatXAI
+from langchain_groq import ChatGroq
+from config import GROQ_API_KEY
 
 from llm_fallback import json_schema_response_format, parse_structured_message
 
@@ -28,21 +31,10 @@ load_dotenv()
 LLM_TIMEOUT_SECONDS = float(os.getenv("LLM_TIMEOUT_SECONDS", "300"))
 LLM_CONNECT_TIMEOUT_SECONDS = float(os.getenv("LLM_CONNECT_TIMEOUT_SECONDS", "10"))
 
-llm = ChatOpenAI(
-    model="nvidia/nemotron-3-ultra-550b-a55b:free",
-    temperature=0,
-    api_key=os.getenv("BAI_API_KEY"),
-    base_url="https://openrouter.ai/api/v1",
-    timeout=httpx.Timeout(
-        LLM_TIMEOUT_SECONDS,
-        connect=LLM_CONNECT_TIMEOUT_SECONDS,
-    ),
-    # The SDK retries twice on its own by default, silently, and that private
-    # ladder neither honours Retry-After nor reports to invoke_structured():
-    # one slow request can burn three full timeouts before our code learns
-    # anything happened. With 0 here, every retry is the visible,
-    # rate-limit-aware one inside llm_fallback.invoke_structured().
-    max_retries=0,
+llm = ChatGroq(
+    model="openai/gpt-oss-120b",
+    api_key=GROQ_API_KEY,
+    temperature=0
 )
 
 

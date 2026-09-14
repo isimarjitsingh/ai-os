@@ -1,48 +1,48 @@
-import { Outlet } from "react-router-dom";
+import { useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
+/* ==========================================================
+   Layout — protected application shell.
+
+   IMPORTANT: the sidebar is position:fixed, so the content
+   column must reserve its width explicitly with lg:pl-64.
+   Without that the sidebar overlaps the page.
+========================================================== */
+
 function Layout() {
+    const [navOpen, setNavOpen] = useState(false);
+
+    const location = useLocation();
+
+    /* Close the mobile drawer on navigation using React's
+       documented "adjust state during render" pattern —
+       cheaper than an effect + extra re-render pass. */
+    const [lastPath, setLastPath] = useState(location.pathname);
+
+    if (lastPath !== location.pathname) {
+        setLastPath(location.pathname);
+        setNavOpen(false);
+    }
+
+
     return (
-        <div className="h-screen overflow-hidden bg-slate-100">
+        <div className="min-h-screen">
+            <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
 
-            <div className="flex h-full">
+            <div className="flex min-h-screen flex-col lg:pl-64">
+                <Header onMenu={() => setNavOpen(true)} />
 
-                {/* Sidebar */}
-
-                <Sidebar />
-
-                {/* Main Content */}
-
-                <div className="flex min-w-0 flex-1 flex-col">
-
-                    <Header />
-
-                    <main className="flex-1 overflow-y-auto">
-
-                        <div
-                            className="
-                                mx-auto
-                                w-full
-                                max-w-[1700px]
-                                px-5
-                                py-6
-                                sm:px-6
-                                lg:px-8
-                                xl:px-10
-                                2xl:px-12
-                            "
-                        >
+                <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+                    <div className="mx-auto w-full max-w-[1600px]">
+                        <div key={location.pathname} className="fade-up">
                             <Outlet />
                         </div>
-
-                    </main>
-
-                </div>
-
+                    </div>
+                </main>
             </div>
-
         </div>
     );
 }

@@ -1,215 +1,108 @@
-import {
-    CheckCircle2,
-    Loader2,
-    Clock3,
-    Brain,
-    Search,
-    Megaphone,
-    DollarSign,
-    Code2,
-    FolderGit2
-} from "lucide-react";
+import { CheckCircle2, Loader2, XCircle, TerminalSquare } from "lucide-react";
 
-const ICONS = {
-    ceo: Brain,
-    research: Search,
-    marketing: Megaphone,
-    finance: DollarSign,
-    coding: Code2,
-    files: FolderGit2
-};
+import { getAgent, TINTS } from "../../lib/agents";
+import { formatTime } from "../../lib/format";
+import { cn } from "../../lib/cn";
 
-function StatusIcon({ status }) {
+/* ==========================================================
+   ActivityFeed — renders the real SSE payload:
+       { agent, status, output, receivedAt, label }
 
+   NOTE: the backend does NOT send `message` or `time`.
+   `label` is derived from `output` in useGeneration, and the
+   timestamp is captured client-side in `receivedAt`.
+========================================================== */
+
+function StatusGlyph({ status }) {
     if (status === "completed") {
-
-        return (
-            <CheckCircle2
-                size={18}
-                className="text-green-600"
-            />
-        );
-
+        return <CheckCircle2 size={15} className="shrink-0 text-emerald-400" />;
     }
 
     if (status === "running") {
-
-        return (
-            <Loader2
-                size={18}
-                className="animate-spin text-violet-600"
-            />
-        );
-
+        return <Loader2 size={15} className="shrink-0 animate-spin text-violet-300" />;
     }
 
-    return (
-        <Clock3
-            size={18}
-            className="text-slate-400"
-        />
-    );
+    if (status === "failed") {
+        return <XCircle size={15} className="shrink-0 text-red-400" />;
+    }
 
+    return <TerminalSquare size={15} className="shrink-0 text-slate-500" />;
 }
 
-function ActivityFeed({
-
-    events = []
-
-}) {
+function ActivityFeed({ events = [], className }) {
+    const newestFirst = [...events].reverse();
 
     return (
+        <div className={cn("panel flex flex-col p-6", className)}>
+            <div className="mb-5 flex items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-base font-bold text-slate-100">
+                        Activity Feed
+                    </h2>
+                    <p className="mt-0.5 text-sm text-slate-500">
+                        Live workflow events
+                    </p>
+                </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-
-            {/* Header */}
-
-            <div className="mb-6">
-
-                <h2 className="text-xl font-bold text-slate-900">
-
-                    Activity Feed
-
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-
-                    Live workflow execution logs
-
-                </p>
-
+                <span className="rounded-full bg-slate-400/10 px-2.5 py-1 text-[11px] font-semibold text-slate-400">
+                    {events.length}
+                </span>
             </div>
 
-            {/* Empty State */}
+            {events.length === 0 && (
+                <div className="flex h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-400/15">
+                    <Loader2 size={26} className="animate-spin text-violet-400" />
 
-            {
+                    <p className="mt-4 text-sm text-slate-500">
+                        Waiting for the first agent event…
+                    </p>
+                </div>
+            )}
 
-                events.length === 0 && (
+            <div className="no-scrollbar max-h-[540px] space-y-2.5 overflow-y-auto">
+                {newestFirst.map((event, index) => {
+                    const agent = getAgent(event.agent);
+                    const Icon = agent?.icon || TerminalSquare;
+                    const palette = TINTS[agent?.tint] || TINTS.violet;
 
-                    <div className="flex h-48 items-center justify-center rounded-2xl border border-dashed border-slate-200">
-
-                        <div className="text-center">
-
-                            <Loader2
-
-                                size={28}
-
-                                className="mx-auto animate-spin text-violet-500"
-
-                            />
-
-                            <p className="mt-4 text-slate-500">
-
-                                Waiting for workflow to start...
-
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                )
-
-            }
-
-            {/* Timeline */}
-
-            <div className="space-y-5">
-
-                {
-
-                    events.map((event, index) => {
-
-                        const Icon = ICONS[event.agent] || Brain;
-
-                        return (
-
-                            <div
-                                key={index}
-                                className="flex gap-4"
+                    return (
+                        <div
+                            key={`${event.agent}-${index}`}
+                            className="flex items-start gap-3 rounded-xl border border-slate-400/10 bg-white/[0.02] p-3"
+                        >
+                            <span
+                                className={cn(
+                                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset",
+                                    palette.bg,
+                                    palette.ring
+                                )}
                             >
+                                <Icon size={14} className={palette.icon} />
+                            </span>
 
-                                {/* Left */}
-
-                                <div className="flex flex-col items-center">
-
-                                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-100">
-
-                                        <Icon
-                                            size={20}
-                                            className="text-violet-600"
-                                        />
-
-                                    </div>
-
-                                    {
-
-                                        index !== events.length - 1 && (
-
-                                            <div className="mt-2 h-10 w-px bg-slate-200"></div>
-
-                                        )
-
-                                    }
-
-                                </div>
-
-                                {/* Right */}
-
-                                <div className="flex-1 rounded-2xl border border-slate-200 p-4">
-
-                                    <div className="flex items-center justify-between">
-
-                                        <h3 className="font-semibold text-slate-900">
-
-                                            {event.agent}
-
-                                        </h3>
-
-                                        <StatusIcon
-                                            status={event.status}
-                                        />
-
-                                    </div>
-
-                                    <p className="mt-2 text-sm text-slate-600">
-
-                                        {event.message}
-
+                            <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="truncate text-xs font-semibold text-slate-200">
+                                        {agent?.name || event.agent || "workflow"}
                                     </p>
 
-                                    <div className="mt-3 flex items-center justify-between">
-
-                                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-
-                                            {event.status}
-
-                                        </span>
-
-                                        <span className="text-xs text-slate-400">
-
-                                            {event.time}
-
-                                        </span>
-
-                                    </div>
-
+                                    <span className="shrink-0 font-mono text-[10px] text-slate-600">
+                                        {formatTime(event.receivedAt)}
+                                    </span>
                                 </div>
 
+                                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">
+                                    {event.label || event.status}
+                                </p>
                             </div>
 
-                        );
-
-                    })
-
-                }
-
+                            <StatusGlyph status={event.status} />
+                        </div>
+                    );
+                })}
             </div>
-
         </div>
-
     );
-
 }
 
 export default ActivityFeed;

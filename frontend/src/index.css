@@ -1,31 +1,31 @@
 @import "tailwindcss";
 
-/* ============================= */
-/* Root Theme */
-/* ============================= */
+/* ==========================================================
+   AI COMPANY OS — DARK DESIGN SYSTEM
+   Built on the project's existing violet / indigo identity.
+========================================================== */
+
+@theme {
+    --color-canvas: #05060e;
+    --color-surface: #0b0e1c;
+    --color-brand: #8b5cf6;
+    --color-brand-alt: #6366f1;
+
+    --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ==========================================================
+   BASE
+========================================================== */
 
 :root {
-    font-family:
-        Inter,
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
-
-    color: #0f172a;
-    background: #f8fafc;
-
+    color-scheme: dark;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
-
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
-
-/* ============================= */
-/* Reset */
-/* ============================= */
 
 *,
 *::before,
@@ -40,32 +40,42 @@ html {
 }
 
 body {
-    margin: 0;
     min-width: 320px;
     min-height: 100vh;
     overflow-x: hidden;
-    background: #f8fafc;
-    color: #0f172a;
+    background-color: #05060e;
+    color: #e2e8f0;
 }
 
-/* ============================= */
-/* Typography */
-/* ============================= */
+/* Ambient brand glow + fine grid, painted once behind the app */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(60rem 40rem at 12% -10%, rgba(139, 92, 246, 0.18), transparent 60%),
+        radial-gradient(50rem 38rem at 95% 5%, rgba(79, 70, 229, 0.16), transparent 60%),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.045) 1px, transparent 1px),
+        linear-gradient(to right, rgba(148, 163, 184, 0.045) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 46px 46px, 46px 46px;
+}
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+#root {
+    position: relative;
+    z-index: 1;
+}
+
+h1, h2, h3, h4, h5, h6 {
     line-height: 1.2;
     font-weight: 700;
-    color: #0f172a;
+    color: #f1f5f9;
 }
 
 p {
     line-height: 1.7;
-    color: #64748b;
+    color: #94a3b8;
 }
 
 a {
@@ -73,14 +83,7 @@ a {
     color: inherit;
 }
 
-/* ============================= */
-/* Form Elements */
-/* ============================= */
-
-button,
-input,
-textarea,
-select {
+button, input, textarea, select {
     font: inherit;
 }
 
@@ -88,21 +91,30 @@ button {
     cursor: pointer;
 }
 
-input,
-textarea,
-select {
+input, textarea, select {
     outline: none;
     border: none;
     background: transparent;
+    color: inherit;
 }
 
-/* ============================= */
-/* Scrollbar */
-/* ============================= */
+img {
+    max-width: 100%;
+    display: block;
+}
+
+::selection {
+    background: #8b5cf6;
+    color: #ffffff;
+}
+
+/* ==========================================================
+   SCROLLBAR
+========================================================== */
 
 ::-webkit-scrollbar {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
 }
 
 ::-webkit-scrollbar-track {
@@ -110,114 +122,332 @@ select {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: rgba(148, 163, 184, 0.22);
     border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
+    background: rgba(139, 92, 246, 0.5);
+    background-clip: content-box;
 }
 
-/* Firefox */
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
 
 * {
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
 }
 
-/* ============================= */
-/* Selection */
-/* ============================= */
+/* ==========================================================
+   COMPONENT CLASSES
+   Declared in @layer components so Tailwind utilities
+   always win when they overlap.
+========================================================== */
 
-::selection {
-    background: #8b5cf6;
-    color: white;
+@layer components {
+    .panel {
+        position: relative;
+        border-radius: 1.25rem;
+        border: 1px solid rgba(148, 163, 184, 0.12);
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
+            rgba(11, 14, 28, 0.72);
+        box-shadow:
+            0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+            0 24px 60px -30px rgba(2, 4, 12, 0.9);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+    }
+
+    .panel-flat {
+        border-radius: 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .panel-interactive {
+        transition:
+            border-color 0.25s ease,
+            transform 0.25s ease,
+            box-shadow 0.25s ease,
+            background-color 0.25s ease;
+    }
+
+    .panel-interactive:hover {
+        transform: translateY(-3px);
+        border-color: rgba(139, 92, 246, 0.42);
+        box-shadow:
+            0 1px 0 0 rgba(255, 255, 255, 0.07) inset,
+            0 28px 70px -32px rgba(139, 92, 246, 0.55);
+    }
+
+    .hairline {
+        border-color: rgba(148, 163, 184, 0.12);
+    }
+
+    .gradient-text {
+        background: linear-gradient(92deg, #a78bfa 0%, #818cf8 50%, #38bdf8 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .brand-gradient {
+        background: linear-gradient(120deg, #7c3aed 0%, #4f46e5 55%, #2563eb 100%);
+    }
+
+    /* Form controls */
+    .field {
+        width: 100%;
+        border-radius: 0.875rem;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        background: rgba(2, 4, 12, 0.55);
+        padding: 0.8rem 1rem;
+        color: #e2e8f0;
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease,
+            background-color 0.2s ease;
+    }
+
+    .field::placeholder {
+        color: #64748b;
+    }
+
+    .field:hover {
+        border-color: rgba(148, 163, 184, 0.28);
+    }
+
+    .field:focus {
+        border-color: rgba(139, 92, 246, 0.8);
+        background: rgba(2, 4, 12, 0.8);
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.16);
+    }
+
+    .field-label {
+        display: block;
+        margin-bottom: 0.6rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: #94a3b8;
+    }
+
+    select.field option {
+        background: #0b0e1c;
+        color: #e2e8f0;
+    }
+
+    /* Buttons */
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        border-radius: 0.875rem;
+        background: linear-gradient(120deg, #7c3aed, #4f46e5);
+        padding: 0.75rem 1.4rem;
+        font-weight: 650;
+        color: #ffffff;
+        box-shadow: 0 16px 40px -18px rgba(124, 58, 237, 0.9);
+        transition:
+            filter 0.2s ease,
+            transform 0.2s ease,
+            opacity 0.2s ease;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        filter: brightness(1.12);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+
+    .btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        border-radius: 0.875rem;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(148, 163, 184, 0.06);
+        padding: 0.75rem 1.4rem;
+        font-weight: 600;
+        color: #cbd5e1;
+        transition:
+            border-color 0.2s ease,
+            background-color 0.2s ease,
+            color 0.2s ease;
+    }
+
+    .btn-ghost:hover:not(:disabled) {
+        border-color: rgba(139, 92, 246, 0.5);
+        background: rgba(139, 92, 246, 0.12);
+        color: #ede9fe;
+    }
+
+    .icon-btn {
+        display: inline-flex;
+        height: 2.5rem;
+        width: 2.5rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.8rem;
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        background: rgba(148, 163, 184, 0.05);
+        color: #94a3b8;
+        transition:
+            color 0.2s ease,
+            border-color 0.2s ease,
+            background-color 0.2s ease;
+    }
+
+    .icon-btn:hover {
+        color: #e2e8f0;
+        border-color: rgba(139, 92, 246, 0.45);
+        background: rgba(139, 92, 246, 0.12);
+    }
+
+    .eyebrow {
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: #7c86a2;
+    }
+
+    .muted {
+        color: #94a3b8;
+    }
+
+    .very-muted {
+        color: #64748b;
+    }
 }
 
-/* ============================= */
-/* Images */
-/* ============================= */
 
-img {
-    max-width: 100%;
-    display: block;
-}
-
-/* ============================= */
-/* Utility Classes */
-/* ============================= */
-
-.glass-card {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-}
-
-.gradient-text {
-    background: linear-gradient(
-        90deg,
-        #7c3aed,
-        #4f46e5
-    );
-    -webkit-background-clip: text;
-    color: transparent;
-}
-
-.card-hover {
-    transition: all .25s ease;
-}
-
-.card-hover:hover {
-    transform: translateY(-4px);
-}
-
-/* ============================= */
-/* Animations */
-/* ============================= */
+/* ==========================================================
+   ANIMATIONS
+========================================================== */
 
 @keyframes fadeUp {
-
     from {
         opacity: 0;
         transform: translateY(12px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
     }
+}
 
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes pulseRing {
+    0% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.55);
+    }
+    70% {
+        box-shadow: 0 0 0 12px rgba(139, 92, 246, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+    }
+}
+
+@keyframes stripeMove {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: 40px 0;
+    }
 }
 
 .fade-up {
-    animation: fadeUp .45s ease;
+    animation: fadeUp 0.45s ease both;
 }
 
-/* ============================= */
-/* Containers */
-/* ============================= */
-
-.container-dashboard {
-    width: min(1700px, 100%);
-    margin-inline: auto;
+.live-dot {
+    animation: pulseRing 1.8s infinite;
 }
 
-/* ============================= */
-/* Responsive Typography */
-/* ============================= */
+.skeleton {
+    position: relative;
+    overflow: hidden;
+    background: rgba(148, 163, 184, 0.09);
+}
+
+.skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.14), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+/* Animated stripes used on the live workflow progress bar */
+.progress-stripes {
+    background-image: linear-gradient(
+        115deg,
+        rgba(255, 255, 255, 0.22) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.22) 50%,
+        rgba(255, 255, 255, 0.22) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 40px 40px;
+    animation: stripeMove 0.9s linear infinite;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* ==========================================================
+   RESPONSIVE TYPE
+========================================================== */
 
 @media (max-width: 1280px) {
-
     html {
         font-size: 15px;
     }
-
 }
 
 @media (max-width: 768px) {
-
     html {
         font-size: 14px;
     }
-
 }
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+

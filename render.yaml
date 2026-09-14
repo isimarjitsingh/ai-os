@@ -1,0 +1,66 @@
+# Render blueprint - infrastructure as code for the backend.
+#
+# Create the web service from this repo and Render reads it, which keeps the
+# environment variables documented in one place instead of typed into a console.
+# Secrets are declared with "sync: false" so Render never overwrites the value
+# you paste into the dashboard; the placeholder here is only a shape hint.
+services:
+  - type: web
+    name: ai-company-os-api
+    rootDir: Backend
+
+    # dockerfilePath is resolved RELATIVE TO rootDir, not to the repo root.
+    # "./Backend/Dockerfile" here would look for Backend/Backend/Dockerfile and
+    # the build would fail before a single pip install.
+    dockerfilePath: ./Dockerfile
+
+    # "runtime" is the current key; "env: docker" is the deprecated spelling.
+    runtime: docker
+
+    # starter (not free) on purpose. Render's own docs for Free instances say
+    # "Do not use them for production applications", that free web services
+    # "spin down on idle", and that Render "might restart a Free web service at
+    # any time". A spin-down mid-run kills the in-process workflow dict and the
+    # SSE stream watching it, so a free instance does not just run slower here,
+    # it loses work. Drop to plan: free only for a throwaway smoke test.
+    plan: starter
+    region: singapore
+
+    # One worker is a correctness requirement, not a cost choice - see the
+    # Dockerfile CMD. Do not raise this or add auto-scaling until the workflow
+    # bus moves out of process into Redis.
+    healthCheckPath: /health
+
+    envVars:
+      - key: DATABASE_URL
+        sync: false # Neon pooled URL, pasted in the dashboard
+      - key: SECRET_KEY
+        sync: false
+      # Deliberately NOT defaulted to http://localhost:5173. A hardcoded
+      # localhost would deploy cleanly and then fail every browser request with
+      # a CORS error that only appears in production. sync: false forces the
+      # real frontend origin to be typed in.
+      - key: CORS_ORIGINS
+        sync: false # e.g. https://your-app.vercel.app
+      - key: DB_ECHO
+        value: "false"
+
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: BAI_API_KEY
+        sync: false
+
+      - key: LANGCHAIN_API_KEY
+        sync: false
+      - key: LANGCHAIN_PROJECT
+        sync: false
+      - key: LANGCHAIN_ENDPOINT
+        sync: false

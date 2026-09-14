@@ -1,14 +1,34 @@
 from datetime import datetime, timedelta, timezone
+import os
 
+from dotenv import load_dotenv
 from jose import jwt
 from passlib.context import CryptContext
 
+
+load_dotenv()
 
 # ==========================================================
 # CONFIG
 # ==========================================================
 
-SECRET_KEY = "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET_KEY"
+_PLACEHOLDER_SECRET = "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET_KEY"
+
+# The previous value was this module's own literal, which meant every deployed
+# copy shared it and anyone could mint a token for any user id. Reading it from
+# the environment is only useful if a missing value is fatal rather than
+# silently falling back, so this raises at import time instead.
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+if not SECRET_KEY or SECRET_KEY == _PLACEHOLDER_SECRET:
+    raise RuntimeError(
+        "SECRET_KEY is missing or still the placeholder value. Generate one "
+        "with a long random string (for example: "
+        "python -c \"import secrets;print(secrets.token_urlsafe(48))\") and set "
+        "it in .env locally and in your host's environment variables in "
+        "production. Refusing to start: tokens minted with a known secret let "
+        "anyone authenticate as any user."
+    )
 
 ALGORITHM = "HS256"
 

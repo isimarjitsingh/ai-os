@@ -23,3 +23,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ==========================================================
+# ENV FILES
+#
+# This block was missing, which is how frontend/.env ended up committed. Vite
+# inlines every VITE_* value into the public JS bundle at build time, so a
+# frontend env file can never hold a real secret - but it does hold per-env
+# config, and a committed one silently fights the value the host sets. Track
+# .env.example, ignore the rest.
+# ==========================================================
+.env
+.env.*
+!.env.example

@@ -370,6 +370,20 @@ class GeneratedFile(Base):
         nullable=False
     )
 
+    # The generated file's actual text. This used to be the only column missing
+    # from the row: routes/files.py rebuilt the preview by reading
+    # Backend/generated_projects/<name>/ off the local disk, which is a
+    # container's temporary filesystem on a hosted app platform. Every project
+    # previewed fine until the first redeploy or scale-up, then the database
+    # still listed the files while the bytes were gone and the endpoint answered
+    # "Generated files exist in database but could not be read from disk".
+    # Storing the content here makes Postgres the source of truth and the disk a
+    # development convenience.
+    contents = Column(
+        Text,
+        nullable=True
+    )
+
     project = relationship(
         "Project",
         back_populates="generated_files"

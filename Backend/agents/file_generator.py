@@ -319,6 +319,7 @@ def repair_import_closure(
                 file_path=str(path),
                 category=_category_for(item["path"]),
                 user_id=state["user_id"],
+                contents=content,
             )
 
             written.append(str(path))
@@ -523,7 +524,8 @@ def file_generator_agent(state: CompanyState):
                 thread_id=state["thread_id"],
                 file_path=str(file_path),
                 category=file.category,
-                user_id=state["user_id"]
+                user_id=state["user_id"],
+                contents=content,
             )
 
             print("🗄️ File metadata saved to database")
@@ -578,12 +580,22 @@ def file_generator_agent(state: CompanyState):
                             rel_p = Path(ef_path).name
                         
                         file_path_for_db = f"generated_projects/{project_name}/{rel_p}"
+
+                        # These files are synthesised by FileWriter rather than
+                        # coming back from the model, so the content has to be
+                        # read back off disk to be stored alongside the row.
+                        try:
+                            entry_contents = Path(ef_path).read_text(encoding="utf-8")
+                        except (OSError, UnicodeDecodeError):
+                            entry_contents = None
+
                         save_generated_file(
                             db=db,
                             thread_id=state["thread_id"],
                             file_path=file_path_for_db,
                             category="frontend",
-                            user_id=state["user_id"]
+                            user_id=state["user_id"],
+                            contents=entry_contents,
                         )
                         print(f"Saved to database: {file_path_for_db}")
                     except Exception as db_error:

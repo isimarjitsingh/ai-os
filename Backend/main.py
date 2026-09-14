@@ -1,7 +1,27 @@
 from uuid import uuid4
 import json
+import os
+import sys
 import threading
 import asyncio
+
+
+# ==========================================================
+# STDOUT ENCODING
+# ==========================================================
+
+# Logging across the agents and routes is full of emoji markers, and a print in
+# a request handler that cannot encode is not a cosmetic problem: it raises
+# UnicodeEncodeError out of the handler and the client gets a 500 for a request
+# that otherwise succeeded. Python picks stdout's encoding from the locale, so
+# this bites whenever output is redirected on Windows (cp1252) or the container
+# runs under a C/POSIX locale. Forcing UTF-8 with lossy fallback keeps a log
+# line from being able to fail a request.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 from fastapi import (
     FastAPI,
@@ -10,6 +30,8 @@ from fastapi import (
 )
 
 from fastapi.middleware.cors import CORSMiddleware
+
+from sqlalchemy import text
 
 from pydantic import BaseModel
 
@@ -58,13 +80,24 @@ service = GraphService()
 # CORS
 # ==========================================================
 
+# The literal list below only ever matched the Vite dev server, so a deployed
+# frontend on any other origin was blocked by the browser before a single
+# request reached the API. Origins now come from the environment;
+# allow_credentials is on, so "*" cannot be used as a wildcard here and every
+# allowed origin must be spelled out.
+def _allowed_origins():
+    raw = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    )
+
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+
 app.add_middleware(
     CORSMiddleware,
 
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=_allowed_origins(),
 
     allow_credentials=True,
 
@@ -72,6 +105,23 @@ app.add_middleware(
 
     allow_headers=["*"],
 )
+
+
+# ==========================================================
+# WORKFLOW STATE WARNING
+# ==========================================================
+
+# services/workflow_manager.py keeps every running workflow in a plain dict and
+# /generate drives it from a thread in this same process, which the SSE endpoint
+# then polls. A second worker or instance would answer the stream from a process
+# that never saw the thread start, and the client would get "Workflow session
+# not found". Run with a single worker until the bus moves to Redis.
+if os.getenv("WEB_CONCURRENCY", "1").strip() not in ("", "1"):
+    print(
+        "WARNING: WEB_CONCURRENCY is set above 1. In-memory workflow state is "
+        "per-process, so /stream/{thread_id} will intermittently report "
+        "\"Workflow session not found\". Use a single worker."
+    )
 
 
 # ==========================================================
@@ -106,6 +156,31 @@ def home():
     return {
         "message": "AI Company OS Backend Running 🚀"
     }
+
+
+# ==========================================================
+# HEALTH CHECK
+# ==========================================================
+
+# Render and Railway both decide whether to keep restarting a service based on
+# a liveness probe, and a free-tier instance that sleeps needs a cheap endpoint
+# to wake against. This deliberately touches the database: an app that imports
+# fine but cannot reach Postgres is not healthy.
+@app.get("/health")
+def health():
+
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+
+        return {"status": "ok", "database": "up"}
+
+    except Exception as error:
+
+        raise HTTPException(
+            status_code=503,
+            detail={"status": "degraded", "database": str(error)}
+        )
 
 
 # ==========================================================
