@@ -51,6 +51,23 @@ process per connection and exhausts Neon's limit under a web app's churn.
 `create_all` runs at import, so on a fresh Neon database the schema appears on
 first boot. Verified: 8 tables, including `generated_files.contents`.
 
+**Local data has been migrated and verified**: 737 rows across all 8 tables,
+confirmed by a per-table md5 over every column, not just row counts. Re-check
+anytime without recopying:
+
+```
+$env:LOCAL_DATABASE_URL = "postgresql://postgres:YOUR_PASSWORD@localhost:5432/ai_company_os"
+python migrations/copy_local_to_target.py --verify-only
+```
+
+### Rotate this password before going live
+
+The pooled connection string - password included - was pasted into a chat window
+and is also sitting in `Backend/.env` on disk. Treat it as disclosed: rotate the
+Neon role password, update `Backend/.env`, update the `DATABASE_URL` secret on the
+host, then rerun `verify_setup.py`. Anyone holding that string has read/write
+access to every user's data, which also means any JWT in circulation is moot.
+
 ---
 
 ## Phase 2 - Backend
@@ -95,8 +112,25 @@ curl https://your-api.example/health
 **build** time to the deployed backend URL, then deploy `frontend/` as a Vite
 static site (build `npm run build`, output `dist`).
 
-`public/_headers` carries COOP/COEP; Vercel and Netlify both honour that file. On
-your own nginx, add the two headers to the server block yourself.
+Verified by building here: `npm run build` succeeds (vite 8.1.5, 2485 modules),
+and `http://localhost:8000` was found **inside** `dist/assets/index-*.js`. That
+is the whole point - Vite substitutes `VITE_*` strings into the bundle at build
+time, so:
+
+- Setting `VITE_API_URL` in a host's dashboard only takes effect on the next
+  **build**. Editing it and not redeploying changes nothing, and there is no
+  error to tell you so.
+- Anyone who downloads the bundle can read the backend URL. That is expected;
+  it is why no API key may ever live in a `VITE_*` variable.
+
+`dist/_headers` is emitted too (Vite copies `public/` into `dist`), carrying
+COOP/COEP; Vercel and Netlify both honour that file. Without it
+`window.crossOriginIsolated` stays false and the WebContainer preview refuses to
+boot. On your own nginx, add the two headers to the server block yourself.
+
+Note the build warns that the main chunk is ~1000 kB (341 kB gzipped). It works;
+it is just a slow first paint, and the fix is dynamic `import()` on the heavy
+routes. `WebPreview` is already split out into its own 28 kB chunk.
 
 Then add the frontend origin to the backend's `CORS_ORIGINS` and redeploy the
 backend - otherwise the browser blocks it.
@@ -115,5 +149,5 @@ which is unaffected, so split-domain is fine today.
 | `test_deploy_e2e.py` | Health, auth, forged-token refusal, and the database-only file read |
 | `migrations/add_generated_file_contents.py` | `create_all` adds tables, never columns. Run once against any **pre-existing** database (e.g. local `ai_company_os`) to add the column |
 | `migrations/backfill_file_contents.py` | Fills `contents` for rows written before the column existed, reading from local disk |
-| `migrations/copy_local_to_target.py` | Copies every row from local Postgres into `DATABASE_URL`, FK-safe order, sequences reset |
+| `migrations/copy_local_to_target.py` | Copies every row from local Postgres into `DATABASE_URL`, FK-safe order, sequences reset. Add `--verify-only` to compare source and target without writing |
 | `fix_requirements_encoding.py` | Re-runnable UTF-16 to UTF-8 guard for `requirements.txt` |
