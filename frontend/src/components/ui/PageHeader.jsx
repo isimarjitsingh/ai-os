@@ -1,10 +1,12 @@
 import { cn } from "../../lib/cn";
+import Breadcrumbs from "./Breadcrumbs";
 
 /* ==========================================================
    PageHeader — consistent title block for every route.
+   `crumbs` renders Home › Section › Detail above the title.
 ========================================================== */
 
-function PageHeader({ eyebrow, title, description, actions, className }) {
+function PageHeader({ eyebrow, crumbs, title, description, actions, className }) {
     return (
         <div
             className={cn(
@@ -13,6 +15,10 @@ function PageHeader({ eyebrow, title, description, actions, className }) {
             )}
         >
             <div className="min-w-0">
+                {crumbs && crumbs.length > 0 && (
+                    <Breadcrumbs items={crumbs} className="mb-3" />
+                )}
+
                 {eyebrow && (
                     <p className="eyebrow mb-2">{eyebrow}</p>
                 )}

@@ -1,42 +1,51 @@
 import { useState } from "react";
-import { Rocket, Loader2, Lightbulb } from "lucide-react";
+import { Building2, Layers, Loader2, Rocket } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { generateProject } from "../../services/api";
-import Panel from "../ui/Panel";
+import { readPrefs } from "../../lib/prefs";
+import { INDUSTRIES, PROJECT_TYPES } from "../../lib/industries";
+import { cn } from "../../lib/cn";
+import Switch from "../ui/Switch";
 
 /* ==========================================================
    GenerateForm
    Builds the user_goal string the CEO planner expects and
    POSTs it to /generate, then hands back the thread id.
+
+   `preset` — a TemplatePresets payload with a changing `token`
+   so re-picking the same template still re-applies.
 ========================================================== */
 
-const INDUSTRIES = [
-    "SaaS",
-    "Healthcare",
-    "Finance",
-    "Education",
-    "AI",
-    "E-Commerce",
-    "Cyber Security",
-    "Travel",
+const IDEA_MAX = 2000;
+const REQ_MAX = 1000;
+
+const ADVANCED = [
+    {
+        key: "autoAssign",
+        title: "Auto-assign agents",
+        hint: "Let the CEO route work to the right departments.",
+    },
+    {
+        key: "pitchDeck",
+        title: "Generate pitch deck",
+        hint: "Add an investor-ready deck outline to the output.",
+    },
+    {
+        key: "financialModel",
+        title: "Create financial model",
+        hint: "Extend the finance report with 24-month projections.",
+    },
 ];
 
-const PROJECT_TYPES = [
-    "Web Application",
-    "Mobile Application",
-    "Desktop Application",
-    "REST API",
-    "Chrome Extension",
-];
+function buildGoal({ idea, industry, projectType, requirements, advanced }) {
+    const extras = [
+        advanced.autoAssign && "Auto-assign the most suitable agents and departments.",
+        advanced.pitchDeck && "Include an investor pitch deck outline.",
+        advanced.financialModel &&
+            "Include a financial model with 24-month revenue and cost projections.",
+    ].filter(Boolean);
 
-const EXAMPLES = [
-    "An AI SaaS that turns voice notes into structured CRM records for field sales teams.",
-    "A marketplace where independent mechanics sell verified service packages.",
-    "A compliance copilot that drafts GDPR data-processing agreements.",
-];
-
-function buildGoal({ idea, industry, projectType, requirements }) {
     return [
         "Startup Idea:",
         idea.trim(),
@@ -49,26 +58,43 @@ function buildGoal({ idea, industry, projectType, requirements }) {
         "",
         "Additional Requirements:",
         requirements.trim() || "None specified.",
+        "",
+        "Advanced Options:",
+        extras.length ? extras.join("\n") : "None selected.",
     ].join("\n");
 }
 
-function GenerateForm({ onSuccess }) {
-    const [idea, setIdea] = useState("");
-    const [industry, setIndustry] = useState("SaaS");
-    const [projectType, setProjectType] = useState("Web Application");
-    const [requirements, setRequirements] = useState("");
+function GenerateForm({ onSuccess, preset }) {
+    const [prefs] = useState(() => readPrefs());
+
+    /* Picking a template remounts this form — the parent keys it on
+       preset.token — so a preset only ever needs to be an initial
+       value. That keeps this render pure (no setState in effects). */
+    const [idea, setIdea] = useState(preset?.idea || "");
+    const [industry, setIndustry] = useState(preset?.industry || prefs.defaultIndustry);
+    const [projectType, setProjectType] = useState(
+        preset?.projectType || prefs.defaultProjectType
+    );
+    const [requirements, setRequirements] = useState(preset?.requirements || "");
+    const [advanced, setAdvanced] = useState({
+        autoAssign: true,
+        pitchDeck: false,
+        financialModel: false,
+    });
     const [loading, setLoading] = useState(false);
 
     const trimmed = idea.trim();
-    const progress = Math.min(100, Math.round((trimmed.length / 120) * 100));
+    const ready = trimmed.length >= 12;
 
-    async function handleGenerate() {
+    async function handleSubmit(event) {
+        event.preventDefault();
+
         if (!trimmed) {
             toast.error("Describe your startup idea first.");
             return;
         }
 
-        if (trimmed.length < 12) {
+        if (!ready) {
             toast.error("Give the agents a little more detail (min 12 characters).");
             return;
         }
@@ -76,7 +102,13 @@ function GenerateForm({ onSuccess }) {
         setLoading(true);
 
         try {
-            const userGoal = buildGoal({ idea, industry, projectType, requirements });
+            const userGoal = buildGoal({
+                idea,
+                industry,
+                projectType,
+                requirements,
+                advanced,
+            });
 
             const result = await generateProject(userGoal);
 
@@ -85,7 +117,6 @@ function GenerateForm({ onSuccess }) {
             }
 
             toast.success("Workflow started — agents are live.");
-
             onSuccess(result.thread_id, userGoal);
         } catch (error) {
             toast.error(error.message || "Failed to start the workflow.");
@@ -95,148 +126,187 @@ function GenerateForm({ onSuccess }) {
     }
 
     return (
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            {/* Composer */}
-            <div className="panel p-6 xl:col-span-2 sm:p-7">
-                <div className="space-y-6">
-                    <div>
-                        <div className="flex items-center justify-between">
-                            <label className="field-label mb-0" htmlFor="idea">
-                                Startup Idea
-                            </label>
+        <form onSubmit={handleSubmit} className="space-y-6">
+            {/* ---------------- Startup idea ---------------- */}
+            <div>
+                <label className="field-label" htmlFor="idea">
+                    Startup Idea
+                </label>
 
-                            <span className="text-[11px] text-slate-600">
-                                {trimmed.length} chars
-                            </span>
-                        </div>
+                <div className="relative">
+                    <textarea
+                        id="idea"
+                        rows={5}
+                        maxLength={IDEA_MAX}
+                        value={idea}
+                        onChange={(event) => setIdea(event.target.value)}
+                        placeholder="An AI SaaS that turns voice notes into structured CRM records for field sales teams…"
+                        className="field resize-y leading-relaxed pb-9"
+                    />
 
-                        <textarea
-                            id="idea"
-                            rows={6}
-                            value={idea}
-                            onChange={(event) => setIdea(event.target.value)}
-                            placeholder="Example: Build an AI SaaS platform that creates complete software startups using autonomous AI agents."
-                            className="field mt-3 resize-y leading-relaxed"
+                    <span className="pointer-events-none absolute bottom-2.5 right-3.5 text-[11px] tabular-nums text-slate-600">
+                        {idea.length}/{IDEA_MAX}
+                    </span>
+                </div>
+
+                <p className="mt-2 text-xs text-slate-600">
+                    {ready
+                        ? "Detailed enough — the CEO agent will plan from this."
+                        : `Add ${Math.max(0, 12 - trimmed.length)} more characters to start.`}
+                </p>
+            </div>
+
+            {/* ---------------- Industry + project type ---------------- */}
+            <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label className="field-label" htmlFor="industry">
+                        Industry
+                    </label>
+
+                    <div className="relative">
+                        <Building2
+                            size={15}
+                            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
                         />
 
-                        <div className="mt-3 flex items-center gap-3">
-                            <div className="h-1 flex-1 overflow-hidden rounded-full bg-slate-400/10">
-                                <div
-                                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-400 transition-all duration-500"
-                                    style={{ width: `${progress}%` }}
-                                />
-                            </div>
-
-                            <span className="text-[11px] text-slate-600">
-                                {progress < 40
-                                    ? "Add more detail"
-                                    : progress < 100
-                                    ? "Looking good"
-                                    : "Great detail"}
-                            </span>
-                        </div>
+                        <select
+                            id="industry"
+                            value={industry}
+                            onChange={(event) => setIndustry(event.target.value)}
+                            className="field pl-10"
+                        >
+                            {INDUSTRIES.map((item) => (
+                                <option key={item} value={item}>
+                                    {item}
+                                </option>
+                            ))}
+                        </select>
                     </div>
+                </div>
 
-                    <div className="grid gap-5 sm:grid-cols-2">
-                        <div>
-                            <label className="field-label" htmlFor="industry">
-                                Industry
-                            </label>
+                <div>
+                    <label className="field-label" htmlFor="project-type">
+                        Project Type
+                    </label>
 
-                            <select
-                                id="industry"
-                                value={industry}
-                                onChange={(event) => setIndustry(event.target.value)}
-                                className="field"
-                            >
-                                {INDUSTRIES.map((item) => (
-                                    <option key={item} value={item}>
-                                        {item}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="field-label" htmlFor="project-type">
-                                Project Type
-                            </label>
-
-                            <select
-                                id="project-type"
-                                value={projectType}
-                                onChange={(event) => setProjectType(event.target.value)}
-                                className="field"
-                            >
-                                {PROJECT_TYPES.map((item) => (
-                                    <option key={item} value={item}>
-                                        {item}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="field-label" htmlFor="requirements">
-                            Additional Requirements
-                            <span className="ml-2 font-normal normal-case tracking-normal text-slate-600">
-                                optional
-                            </span>
-                        </label>
-
-                        <textarea
-                            id="requirements"
-                            rows={4}
-                            value={requirements}
-                            onChange={(event) => setRequirements(event.target.value)}
-                            placeholder="Authentication, Stripe payments, AI chatbot, dashboard, analytics…"
-                            className="field resize-y leading-relaxed"
+                    <div className="relative">
+                        <Layers
+                            size={15}
+                            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500"
                         />
-                    </div>
 
-                    <button
-                        type="button"
-                        onClick={handleGenerate}
-                        disabled={loading}
-                        className="btn-primary w-full py-4 text-base"
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 size={20} className="animate-spin" />
-                                Starting AI workflow…
-                            </>
-                        ) : (
-                            <>
-                                <Rocket size={19} />
-                                Generate Startup
-                            </>
-                        )}
-                    </button>
+                        <select
+                            id="project-type"
+                            value={projectType}
+                            onChange={(event) => setProjectType(event.target.value)}
+                            className="field pl-10"
+                        >
+                            {PROJECT_TYPES.map((item) => (
+                                <option key={item} value={item}>
+                                    {item}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            {/* ---------- Guidance ---------- */}
-            <aside className="space-y-5">
-                <Panel title="Try one of these" icon={Lightbulb} padded={false}>
-                    <ul className="space-y-2 p-4">
-                        {EXAMPLES.map((example) => (
-                            <li key={example}>
-                                <button
-                                    type="button"
-                                    onClick={() => setIdea(example)}
-                                    className="w-full rounded-xl border border-slate-400/10 bg-white/[0.02] p-3.5 text-left text-xs leading-relaxed text-slate-400 transition hover:border-violet-400/40 hover:bg-violet-500/5 hover:text-slate-200"
-                                >
-                                    {example}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </Panel>
-            </aside>
-        </div>
+            {/* ---------------- Requirements ---------------- */}
+            <div>
+                <label className="field-label" htmlFor="requirements">
+                    Additional Requirements
+                    <span className="ml-2 font-normal normal-case tracking-normal text-slate-600">
+                        optional
+                    </span>
+                </label>
+
+                <div className="relative">
+                    <textarea
+                        id="requirements"
+                        rows={3}
+                        maxLength={REQ_MAX}
+                        value={requirements}
+                        onChange={(event) => setRequirements(event.target.value)}
+                        placeholder="Authentication, Stripe payments, AI chatbot, dashboard, analytics…"
+                        className="field resize-y leading-relaxed pb-9"
+                    />
+
+                    <span className="pointer-events-none absolute bottom-2.5 right-3.5 text-[11px] tabular-nums text-slate-600">
+                        {requirements.length}/{REQ_MAX}
+                    </span>
+                </div>
+            </div>
+
+            {/* ---------------- Advanced options ---------------- */}
+            <div>
+                <p className="field-label">Advanced Options</p>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                    {ADVANCED.map((option) => {
+                        const on = advanced[option.key];
+
+                        return (
+                            <div
+                                key={option.key}
+                                className={cn(
+                                    "rounded-2xl border p-4 transition",
+                                    on
+                                        ? "border-violet-400/40 bg-violet-500/[0.06]"
+                                        : "border-[var(--color-line)] bg-white/[0.02]"
+                                )}
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <p className="text-sm font-semibold leading-snug text-slate-200">
+                                        {option.title}
+                                    </p>
+
+                                    <Switch
+                                        checked={on}
+                                        label={option.title}
+                                        onChange={(next) =>
+                                            setAdvanced((prev) => ({
+                                                ...prev,
+                                                [option.key]: next,
+                                            }))
+                                        }
+                                    />
+                                </div>
+
+                                <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                                    {option.hint}
+                                </p>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <p className="mt-2.5 text-xs text-slate-600">
+                    Selections are appended to the brief the CEO agent plans from.
+                </p>
+            </div>
+
+            {/* ---------------- Submit ---------------- */}
+            <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary w-full py-4 text-base"
+            >
+                {loading ? (
+                    <>
+                        <Loader2 size={20} className="animate-spin" />
+                        Starting AI workflow…
+                    </>
+                ) : (
+                    <>
+                        <Rocket size={19} />
+                        Generate Startup →
+                    </>
+                )}
+            </button>
+
+
+        </form>
     );
 }
 
 export default GenerateForm;
-

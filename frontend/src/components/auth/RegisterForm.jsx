@@ -1,11 +1,25 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, User, Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 
 import AuthShell from "./AuthShell";
 import { registerUser } from "../../services/auth";
 import { useAuth } from "../../context/AuthContext";
+
+/* ==========================================================
+   RegisterForm — light card, mirrors LoginForm.
+   Password rules match the backend: 6 characters minimum.
+========================================================== */
+
+const LABELS = ["Too short", "Weak", "Fair", "Strong", "Excellent"];
+const BARS = [
+    "bg-red-500",
+    "bg-orange-500",
+    "bg-amber-400",
+    "bg-emerald-500",
+    "bg-emerald-500",
+];
 
 function strengthOf(password) {
     let score = 0;
@@ -13,11 +27,20 @@ function strengthOf(password) {
     if (/[A-Z]/.test(password)) score += 1;
     if (/[0-9]/.test(password)) score += 1;
     if (/[^A-Za-z0-9]/.test(password)) score += 1;
-    return score;
+
+    return password.length >= 6 ? Math.max(1, score) : 0;
 }
 
-const LABELS = ["Too short", "Weak", "Fair", "Strong", "Excellent"];
-const BARS = ["bg-red-500", "bg-orange-500", "bg-amber-400", "bg-emerald-400", "bg-emerald-400"];
+function FieldLabel({ htmlFor, children }) {
+    return (
+        <label
+            htmlFor={htmlFor}
+            className="mb-2 block text-[11px] font-bold uppercase tracking-[0.09em] text-slate-500"
+        >
+            {children}
+        </label>
+    );
+}
 
 function RegisterForm() {
     const navigate = useNavigate();
@@ -72,7 +95,7 @@ function RegisterForm() {
                     Already registered?{" "}
                     <Link
                         to="/login"
-                        className="font-semibold text-violet-300 transition hover:text-violet-200"
+                        className="font-semibold text-violet-600 transition hover:text-violet-700"
                     >
                         Sign in
                     </Link>
@@ -80,21 +103,19 @@ function RegisterForm() {
             }
         >
             {error && (
-                <div className="mb-5 rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
                     {error}
                 </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                    <label className="field-label" htmlFor="name">
-                        Full name
-                    </label>
+                    <FieldLabel htmlFor="name">Full name</FieldLabel>
 
                     <div className="relative">
                         <User
                             size={15}
-                            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600"
+                            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                         />
 
                         <input
@@ -105,20 +126,18 @@ function RegisterForm() {
                             onChange={(event) => setName(event.target.value)}
                             required
                             autoComplete="name"
-                            className="field pl-10"
+                            className="field-light pl-11"
                         />
                     </div>
                 </div>
 
                 <div>
-                    <label className="field-label" htmlFor="email">
-                        Email
-                    </label>
+                    <FieldLabel htmlFor="email">Email</FieldLabel>
 
                     <div className="relative">
                         <Mail
                             size={15}
-                            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600"
+                            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                         />
 
                         <input
@@ -129,20 +148,18 @@ function RegisterForm() {
                             onChange={(event) => setEmail(event.target.value)}
                             required
                             autoComplete="email"
-                            className="field pl-10"
+                            className="field-light pl-11"
                         />
                     </div>
                 </div>
 
                 <div>
-                    <label className="field-label" htmlFor="password">
-                        Password
-                    </label>
+                    <FieldLabel htmlFor="password">Password</FieldLabel>
 
                     <div className="relative">
                         <Lock
                             size={15}
-                            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600"
+                            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
                         />
 
                         <input
@@ -154,14 +171,14 @@ function RegisterForm() {
                             required
                             minLength={6}
                             autoComplete="new-password"
-                            className="field pl-10 pr-11"
+                            className="field-light pl-11 pr-11"
                         />
 
                         <button
                             type="button"
                             onClick={() => setShowPassword((value) => !value)}
                             aria-label={showPassword ? "Hide password" : "Show password"}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition hover:text-slate-300"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
                         >
                             {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
@@ -176,7 +193,7 @@ function RegisterForm() {
                                         className={
                                             index < score
                                                 ? `h-1 flex-1 rounded-full ${BARS[score - 1]}`
-                                                : "h-1 flex-1 rounded-full bg-slate-400/12"
+                                                : "h-1 flex-1 rounded-full bg-slate-200"
                                         }
                                     />
                                 ))}
@@ -192,7 +209,7 @@ function RegisterForm() {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="btn-primary w-full py-3.5"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 py-3.5 font-semibold text-white shadow-lg shadow-violet-600/25 transition hover:brightness-110 disabled:opacity-60"
                 >
                     {loading ? (
                         <>
@@ -201,15 +218,15 @@ function RegisterForm() {
                         </>
                     ) : (
                         <>
-                            <UserPlus size={18} />
                             Create account
+                            <ArrowRight size={17} />
                         </>
                     )}
                 </button>
+
             </form>
         </AuthShell>
     );
 }
 
 export default RegisterForm;
-

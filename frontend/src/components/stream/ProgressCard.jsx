@@ -1,17 +1,29 @@
-import { Activity, Clock3, CheckCircle2, Wifi, WifiOff } from "lucide-react";
+import { Clock3, Wifi, WifiOff } from "lucide-react";
 
+import Ring from "../ui/Ring";
 import { getAgent } from "../../lib/agents";
 import { cn } from "../../lib/cn";
 
 /* ==========================================================
-   ProgressCard — overall workflow progress + live pulse.
+   ProgressCard — overall workflow progress with a donut.
+   Every number here is derived from the SSE stream.
 ========================================================== */
 
 function formatClock(seconds) {
     const safe = Math.max(0, seconds || 0);
     const mins = Math.floor(safe / 60);
     const secs = safe % 60;
+
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
+
+function startedAgo(seconds) {
+    const mins = Math.floor(Math.max(0, seconds || 0) / 60);
+
+    if (mins < 1) return "just now";
+    if (mins === 1) return "1 minute ago";
+
+    return `${mins} minutes ago`;
 }
 
 function ProgressCard({
@@ -25,19 +37,15 @@ function ProgressCard({
     elapsed = 0,
 }) {
     const agent = getAgent(currentAgent);
-    const Icon = agent?.icon || Activity;
+    const remaining = Math.max(0, total - completed);
+
+    const tone = failed ? "#ef4444" : finished ? "#22c55e" : "#8b5cf6";
 
     const headline = failed
         ? "Workflow failed"
         : finished
         ? "Workflow complete"
         : agent?.name || "Waiting for first event";
-
-    const tone = failed
-        ? "text-red-300"
-        : finished
-        ? "text-emerald-300"
-        : "text-violet-300";
 
     const barTone = failed
         ? "from-red-500 to-rose-500"
@@ -46,66 +54,74 @@ function ProgressCard({
         : "from-violet-500 via-indigo-500 to-blue-500";
 
     return (
-        <div className="panel overflow-hidden p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="panel p-6">
+            {/* ---------- Header ---------- */}
+            <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <p className="eyebrow">Overall Progress</p>
-
-                    <h2 className="mt-1.5 truncate text-xl font-bold text-slate-100">
-                        {headline}
-                    </h2>
+                    <h2 className="text-base font-bold text-slate-100">Overall Progress</h2>
+                    <p className="mt-0.5 truncate text-sm text-slate-500">{headline}</p>
                 </div>
 
-                <div className="text-right">
-                    <p className={cn("text-3xl font-bold tabular-nums", tone)}>
-                        {percentage}%
-                    </p>
+                <span className="flex shrink-0 items-center gap-1.5 text-xs text-slate-500">
+                    🕑 Started {startedAgo(elapsed)}
+                </span>
+            </div>
 
-                    <p className="text-[11px] text-slate-500">
-                        {completed} / {total} agents
+            {/* ---------- Donut + bar ---------- */}
+            <div className="mt-6 grid items-center gap-6 sm:grid-cols-[130px_minmax(0,1fr)]">
+                <div className="justify-self-start sm:justify-self-center">
+                    <Ring value={percentage} size={130} stroke={10} color={tone} />
+                </div>
+
+                <div className="min-w-0">
+                    <div className="flex items-baseline justify-between gap-4">
+                        <p className="text-sm font-semibold text-slate-300">
+                            Agents completed
+                        </p>
+
+                        <p className="text-sm font-bold tabular-nums text-slate-200">
+                            {completed}/{total}
+                        </p>
+                    </div>
+
+                    <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-slate-400/10">
+                        <div
+                            className={cn(
+                                "h-full rounded-full bg-gradient-to-r transition-all duration-700 ease-out",
+                                barTone,
+                                !finished && !failed && connected && "progress-stripes"
+                            )}
+                            style={{ width: `${Math.max(percentage, 3)}%` }}
+                        />
+                    </div>
+
+                    <p className="mt-2.5 text-xs text-slate-500">
+                        {completed} of {total} agents completed
+                        {remaining > 0 ? `, ${remaining} remaining` : " — all done"}
                     </p>
                 </div>
             </div>
 
-            {/* bar */}
-            <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-400/10">
-                <div
-                    className={cn(
-                        "h-full rounded-full bg-gradient-to-r transition-all duration-700 ease-out",
-                        barTone,
-                        !finished && !failed && connected && "progress-stripes"
-                    )}
-                    style={{ width: `${Math.max(percentage, 3)}%` }}
-                />
-            </div>
-
-            {/* footer */}
-            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 text-xs text-slate-500">
-                <span className="flex items-center gap-2">
-                    {connected ? (
-                        <Wifi size={13} className="text-emerald-400" />
-                    ) : (
-                        <WifiOff size={13} className="text-slate-600" />
-                    )}
+            {/* ---------- Footer ---------- */}
+            <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                <span className={cn("chip", connected ? "chip-ok" : "chip-idle")}>
+                    {connected ? <Wifi size={12} /> : <WifiOff size={12} />}
                     {connected ? "SSE connected" : "Stream closed"}
                 </span>
 
-                <span className="flex items-center gap-2">
-                    <Clock3 size={13} className="text-slate-600" />
+                <span className="chip chip-idle">
+                    <Clock3 size={12} />
                     {formatClock(elapsed)} elapsed
                 </span>
 
-                {!finished && !failed && (
-                    <span className="flex items-center gap-2">
-                        <Icon size={13} className="text-violet-300" />
-                        {agent ? "Executing now" : "Idle"}
-                    </span>
-                )}
+                {failed && <span className="chip chip-off">Failed</span>}
 
-                {finished && (
-                    <span className="flex items-center gap-2 text-emerald-400">
-                        <CheckCircle2 size={13} />
-                        Opening project…
+                {finished && !failed && <span className="chip chip-ok">Complete</span>}
+
+                {!finished && !failed && agent && (
+                    <span className="chip chip-run">
+                        <span className="live-dot h-1.5 w-1.5 rounded-full bg-current" />
+                        Executing {agent.id}
                     </span>
                 )}
             </div>

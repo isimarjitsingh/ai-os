@@ -10,6 +10,8 @@ import Generation from "./pages/Generation";
 import Projects from "./pages/Projects";
 import ProjectDashboard from "./pages/ProjectDashboard";
 import Agents from "./pages/Agents";
+import Knowledge from "./pages/Knowledge";
+import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 
 import Login from "./pages/Login";
@@ -56,6 +58,8 @@ function App() {
                     <Route path="/projects" element={<Projects />} />
                     <Route path="/project/:threadId" element={<ProjectDashboard />} />
                     <Route path="/agents" element={<Agents />} />
+                    <Route path="/knowledge" element={<Knowledge />} />
+                    <Route path="/analytics" element={<Analytics />} />
                     <Route path="/settings" element={<Settings />} />
                 </Route>
 

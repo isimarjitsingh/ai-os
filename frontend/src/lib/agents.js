@@ -25,6 +25,12 @@ export const AGENTS = [
         dept: "Executive",
         icon: Brain,
         tint: "violet",
+        accent: "#7c5cff",
+        status: "active",
+        progress: 92,
+        tasks: 128,
+        avgRuntime: "1m 12s",
+        successRate: 99,
         blurb:
             "Reads your idea, decides which departments are needed, and writes the final executive verdict.",
         output: "Execution plan · Executive summary",
@@ -35,6 +41,12 @@ export const AGENTS = [
         dept: "Market Intel",
         icon: Search,
         tint: "cyan",
+        accent: "#22d3ee",
+        status: "active",
+        progress: 76,
+        tasks: 112,
+        avgRuntime: "2m 04s",
+        successRate: 97,
         blurb:
             "Analyses the market, audience, competitors, feature set, opportunities and risks.",
         output: "Research report",
@@ -45,6 +57,12 @@ export const AGENTS = [
         dept: "Growth",
         icon: Megaphone,
         tint: "pink",
+        accent: "#f472b6",
+        status: "idle",
+        progress: 48,
+        tasks: 64,
+        avgRuntime: "1m 38s",
+        successRate: 95,
         blurb:
             "Builds positioning, launch strategy, channel plan, content ideas and growth KPIs.",
         output: "Marketing report",
@@ -55,6 +73,12 @@ export const AGENTS = [
         dept: "Finance",
         icon: DollarSign,
         tint: "emerald",
+        accent: "#34d399",
+        status: "idle",
+        progress: 35,
+        tasks: 51,
+        avgRuntime: "1m 21s",
+        successRate: 96,
         blurb:
             "Models startup and monthly costs, revenue streams, pricing and break-even.",
         output: "Finance model",
@@ -65,6 +89,12 @@ export const AGENTS = [
         dept: "Engineering",
         icon: Code2,
         tint: "sky",
+        accent: "#38bdf8",
+        status: "active",
+        progress: 81,
+        tasks: 97,
+        avgRuntime: "3m 47s",
+        successRate: 93,
         blurb:
             "Designs the architecture, tech stack, database schema and API endpoint contract.",
         output: "Technical blueprint",
@@ -75,11 +105,34 @@ export const AGENTS = [
         dept: "Engineering",
         icon: FolderGit2,
         tint: "amber",
+        accent: "#fbbf24",
+        status: "offline",
+        progress: 12,
+        tasks: 43,
+        avgRuntime: "4m 26s",
+        successRate: 91,
         blurb:
             "Writes the actual project files to disk so they can be browsed and previewed live.",
         output: "Generated project files",
     },
 ];
+
+/* ==========================================================
+    Derived roster totals — computed from AGENTS so the stat
+    row can never drift from the cards below it.
+========================================================== */
+
+export const AGENT_TOTALS = AGENTS.reduce(
+    (acc, agent) => {
+        acc.total += 1;
+        if (agent.status === "active") acc.active += 1;
+        if (agent.status === "idle") acc.idle += 1;
+        if (agent.status === "offline") acc.offline += 1;
+        return acc;
+    },
+    { total: 0, active: 0, idle: 0, offline: 0 }
+);
+
 
 export const AGENT_BY_ID = Object.fromEntries(
     AGENTS.map((agent) => [agent.id, agent])

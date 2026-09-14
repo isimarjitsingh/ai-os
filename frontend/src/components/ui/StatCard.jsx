@@ -17,6 +17,14 @@ const TONES = {
         icon: "bg-amber-500/10 text-amber-300 ring-amber-400/25",
         accent: "from-amber-500/40",
     },
+    sky: {
+        icon: "bg-sky-500/10 text-sky-300 ring-sky-400/25",
+        accent: "from-sky-500/40",
+    },
+    red: {
+        icon: "bg-red-500/10 text-red-300 ring-red-400/25",
+        accent: "from-red-500/40",
+    },
     slate: {
         icon: "bg-slate-500/10 text-slate-300 ring-slate-400/20",
         accent: "from-slate-500/30",

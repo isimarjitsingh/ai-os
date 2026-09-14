@@ -15,6 +15,8 @@ function AgentProgress({
     connected = false,
     elapsed = 0,
     statuses = {},
+    durations = {},
+    detailsTo,
 }) {
     return (
         <div className="space-y-6">
@@ -29,7 +31,11 @@ function AgentProgress({
                 elapsed={elapsed}
             />
 
-            <WorkflowTimeline statuses={statuses} />
+            <WorkflowTimeline
+                statuses={statuses}
+                durations={durations}
+                detailsTo={detailsTo}
+            />
         </div>
     );
 }

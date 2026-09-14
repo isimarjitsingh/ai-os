@@ -6,12 +6,26 @@
 ========================================================== */
 
 @theme {
-    --color-canvas: #05060e;
-    --color-surface: #0b0e1c;
-    --color-brand: #8b5cf6;
-    --color-brand-alt: #6366f1;
+    /* Surfaces — page → card → nested card → hairline */
+    --color-canvas: #070713;
+    --color-surface: #0f1020;
+    --color-raised: #15162b;
+    --color-line: #23243f;
+
+    /* Brand */
+    --color-brand: #7c5cff;
+    --color-brand-soft: #a78bfa;
+    --color-brand-deep: #5b3df5;
+
+    /* Status */
+    --color-ok: #22c55e;
+    --color-run: #8b5cf6;
+    --color-idle: #38bdf8;
+    --color-off: #ef4444;
+    --color-warn: #f59e0b;
 
     --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 /* ==========================================================
@@ -25,6 +39,11 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+
+    /* Single source of truth for the shell geometry.
+       Sidebar.jsx (width) and Layout.jsx (grid column) both read this,
+       so the two can never drift apart and overlap the page. */
+    --sidebar-w: 16rem;
 }
 
 *,
@@ -43,7 +62,7 @@ body {
     min-width: 320px;
     min-height: 100vh;
     overflow-x: hidden;
-    background-color: #05060e;
+    background-color: var(--color-canvas);
     color: #e2e8f0;
 }
 
@@ -152,10 +171,10 @@ img {
     .panel {
         position: relative;
         border-radius: 1.25rem;
-        border: 1px solid rgba(148, 163, 184, 0.12);
+        border: 1px solid var(--color-line);
         background:
             linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
-            rgba(11, 14, 28, 0.72);
+            var(--color-surface);
         box-shadow:
             0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
             0 24px 60px -30px rgba(2, 4, 12, 0.9);
@@ -239,8 +258,34 @@ img {
     }
 
     select.field option {
-        background: #0b0e1c;
+        background: var(--color-surface);
         color: #e2e8f0;
+    }
+
+    /* Light-surface inputs — used inside the auth card only */
+    .field-light {
+        width: 100%;
+        border-radius: 0.9rem;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        padding: 0.8rem 1rem;
+        color: #0f172a;
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .field-light::placeholder {
+        color: #94a3b8;
+    }
+
+    .field-light:hover {
+        border-color: #cbd5e1;
+    }
+
+    .field-light:focus {
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
     }
 
     /* Buttons */
@@ -331,6 +376,94 @@ img {
 
     .very-muted {
         color: #64748b;
+    }
+
+    /* ------------------------------------------------------
+       HERO BANNER
+       Full-bleed gradient header used on Generate + Workflow.
+       ------------------------------------------------------ */
+    .hero-banner {
+        position: relative;
+        overflow: hidden;
+        border-radius: 1.25rem;
+        border: 1px solid rgba(124, 92, 255, 0.28);
+        background:
+            radial-gradient(38rem 22rem at 85% 20%, rgba(124, 92, 255, 0.45), transparent 65%),
+            linear-gradient(110deg, #2a1b63 0%, #1a1340 45%, #120e2c 100%);
+    }
+
+    /* ------------------------------------------------------
+       STATUS CHIPS
+       <span class="chip chip-ok">Completed</span>
+       ------------------------------------------------------ */
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 0.6rem;
+        padding: 0.3rem 0.7rem;
+        font-size: 0.75rem;
+        font-weight: 650;
+        white-space: nowrap;
+    }
+
+    .chip-ok {
+        background: rgba(34, 197, 94, 0.14);
+        color: #4ade80;
+    }
+
+    .chip-run {
+        background: rgba(139, 92, 246, 0.16);
+        color: #c4b5fd;
+    }
+
+    .chip-idle {
+        background: rgba(148, 163, 184, 0.12);
+        color: #94a3b8;
+    }
+
+    .chip-off {
+        background: rgba(239, 68, 68, 0.14);
+        color: #f87171;
+    }
+
+    .chip-warn {
+        background: rgba(245, 158, 11, 0.14);
+        color: #fbbf24;
+    }
+
+    /* ------------------------------------------------------
+       PILL SWITCH
+       Generate "Advanced Options" + Settings preference rows.
+       ------------------------------------------------------ */
+    .switch {
+        position: relative;
+        display: inline-flex;
+        flex-shrink: 0;
+        height: 1.5rem;
+        width: 2.75rem;
+        border-radius: 9999px;
+        background: #334155;
+        transition: background-color 0.2s ease;
+    }
+
+    .switch[data-on="true"] {
+        background: #8b5cf6;
+    }
+
+    .switch > span {
+        position: absolute;
+        top: 0.125rem;
+        left: 0.125rem;
+        height: 1.25rem;
+        width: 1.25rem;
+        border-radius: 9999px;
+        background: #ffffff;
+        transition: transform 0.2s ease;
+    }
+
+    .switch[data-on="true"] > span {
+        transform: translateX(1.25rem);
     }
 }
 
