@@ -43,8 +43,11 @@ function Layout() {
             <div className="flex min-h-screen min-w-0 flex-col">
                 <Header onMenu={() => setNavOpen(true)} />
 
-                <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
-                    <div className="mx-auto w-full max-w-[1600px]">
+                {/* One shared rhythm for every screen: the same gutters
+                    and the same max width, so cards line up across routes
+                    exactly as they do in the mockups. */}
+                <main className="flex-1 px-4 py-6 sm:px-6 lg:px-[var(--gutter)] lg:py-7">
+                    <div className="mx-auto w-full max-w-[var(--content-max)]">
                         <div key={location.pathname} className="fade-up">
                             <Outlet />
                         </div>

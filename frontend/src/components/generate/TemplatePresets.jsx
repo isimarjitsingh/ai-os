@@ -1,87 +1,91 @@
-import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { FileText, ArrowRight } from "lucide-react";
 
-import Panel from "../ui/Panel";
 import { TEMPLATES } from "../../lib/templates";
+import { cn } from "../../lib/cn";
 
 /* ==========================================================
-   TemplatePresets — curated starter briefs shown in the rail
-   beside the composer. Data lives in lib/templates.js; the
-   picked template travels up through onUse.
+   TemplatePresets — the rail beside the composer.
+
+   The mockups show a plain panel ("Start from a template /
+   Choose a focused workflow") holding compact selectable cards,
+   so the whole card is the button rather than a small link
+   tucked under a tag row.
+
+   Data lives in lib/templates.js; the picked template travels
+   up through onUse and Generate keys the form on it.
 ========================================================== */
 
-function TemplatePresets({ onUse }) {
+function TemplatePresets({ onUse, activeId }) {
     return (
-        <Panel
-            title="Template Presets"
-            subtitle="Get inspired by these curated startup ideas."
-            padded={false}
-            className="xl:sticky xl:top-24"
-        >
-            <ul className="space-y-3 p-4">
+        <aside className="panel flex min-w-0 flex-col p-5 xl:sticky xl:top-6 xl:self-start">
+            <div className="flex items-start gap-3">
+                <span className="tile tile-brand h-9 w-9 shrink-0 rounded-lg">
+                    <FileText size={16} />
+                </span>
+
+                <div className="min-w-0">
+                    <h2 className="text-base font-bold text-slate-100">
+                        Start from a template
+                    </h2>
+                    <p className="mt-0.5 text-sm text-slate-500">Choose a focused workflow.</p>
+                </div>
+            </div>
+
+            <ul className="mt-5 space-y-3">
                 {TEMPLATES.map((template) => {
                     const Icon = template.icon;
+                    const isActive = template.id === activeId;
 
                     return (
-                        <li
-                            key={template.id}
-                            className="rounded-2xl border border-[var(--color-line)] bg-white/[0.02] p-4 transition hover:border-violet-400/40 hover:bg-violet-500/[0.04]"
-                        >
-                            <div className="flex items-start gap-3">
+                        <li key={template.id}>
+                            <button
+                                type="button"
+                                onClick={() => onUse?.(template)}
+                                aria-pressed={isActive}
+                                className={cn(
+                                    "flex w-full items-start gap-3 rounded-xl border p-3.5 text-left transition",
+                                    isActive
+                                        ? "border-violet-400/50 bg-violet-500/[0.08]"
+                                        : "border-[var(--color-line)] bg-white/[0.02] hover:border-violet-400/35 hover:bg-white/[0.04]"
+                                )}
+                            >
                                 <span
-                                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
                                     style={{
                                         background: `${template.accent}1f`,
                                         color: template.accent,
                                     }}
                                 >
-                                    <Icon size={18} />
+                                    <Icon size={16} />
                                 </span>
 
-                                <div className="min-w-0">
-                                    <p className="truncate text-sm font-bold text-slate-100">
+                                <span className="min-w-0 flex-1">
+                                    <span className="block truncate text-sm font-semibold text-slate-100">
                                         {template.title}
-                                    </p>
-
-                                    <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">
-                                        {template.blurb}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="mt-3 flex flex-wrap items-center gap-2">
-                                {template.tags.map((tag) => (
-                                    <span
-                                        key={tag}
-                                        className="chip chip-idle !px-2 !py-0.5 !text-[11px]"
-                                    >
-                                        {tag}
                                     </span>
-                                ))}
 
-                                <button
-                                    type="button"
-                                    onClick={() => onUse?.(template)}
-                                    className="ml-auto flex items-center gap-1.5 text-xs font-semibold text-violet-300 transition hover:text-violet-200"
-                                >
-                                    Use template
-                                    <ArrowRight size={12} />
-                                </button>
-                            </div>
+                                    <span className="mt-1 block text-xs leading-relaxed text-slate-500">
+                                        {template.blurb}
+                                    </span>
+                                </span>
+
+                                {isActive && (
+                                    <ArrowRight
+                                        size={14}
+                                        className="mt-1 shrink-0 text-violet-300"
+                                    />
+                                )}
+                            </button>
                         </li>
                     );
                 })}
             </ul>
 
-            <div className="border-t border-[var(--color-line)] px-5 py-3.5">
-                <Link
-                    to="/knowledge"
-                    className="text-xs text-slate-500 transition hover:text-violet-300"
-                >
-                    Browse the knowledge library →
-                </Link>
-            </div>
-        </Panel>
+            <p className="mt-5 border-t border-[var(--color-line)] pt-4 text-xs leading-relaxed text-slate-600">
+                Picking a template fills the idea, industry, project type and requirements
+                fields above.
+            </p>
+        </aside>
     );
 }
 

@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Users, CircleDot } from "lucide-react";
 
-import PageHeader from "../components/ui/PageHeader";
 import StatCard from "../components/ui/StatCard";
 import Ring from "../components/ui/Ring";
 import ActivityFeed from "../components/stream/ActivityFeed";
@@ -19,8 +18,6 @@ import { cn } from "../lib/cn";
    representative roster values held in lib/agents.js — the
    backend exposes no per-agent metrics endpoint.
 ========================================================== */
-
-const CRUMBS = [{ label: "Home", to: "/" }, { label: "Agents" }];
 
 const STATUS_CHIP = {
     active: "chip-ok",
@@ -147,19 +144,22 @@ function ExecutionOrder() {
 
 function Agents() {
     return (
-        <div className="space-y-7">
-            <PageHeader
-                crumbs={CRUMBS}
-                eyebrow="Workforce"
-                title="Agents"
-                description="Six specialised departments run in a fixed sequence. The CEO plans first, then each department executes and hands off."
-                actions={
-                    <Link to="/generate" className="btn-primary text-sm">
-                        Run the team
-                        <ArrowRight size={15} />
-                    </Link>
-                }
-            />
+        <div className="space-y-6">
+            {/* ---------- Section bar (the page title lives in the masthead) ---------- */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="min-w-0">
+                    <p className="section-label mb-1.5">Workforce</p>
+
+                    <h2 className="text-xl font-bold tracking-tight text-slate-50 sm:text-[22px]">
+                        {AGENT_TOTALS.total} specialised departments
+                    </h2>
+                </div>
+
+                <Link to="/generate" className="btn-solid shrink-0">
+                    Run the team
+                    <ArrowRight size={15} />
+                </Link>
+            </div>
 
             {/* ---------------- Stat row ---------------- */}
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -206,7 +206,7 @@ function Agents() {
                     title="Recent Activity"
                     subtitle="Across every department"
                     footerTo="/analytics"
-                    className="xl:sticky xl:top-24 xl:self-start"
+                    className="xl:sticky xl:top-6 xl:self-start"
                 />
             </div>
 

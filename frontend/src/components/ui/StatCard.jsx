@@ -1,4 +1,5 @@
 import { cn } from "../../lib/cn";
+import { BarChart3 } from "lucide-react";
 
 const TONES = {
     violet: {
@@ -33,6 +34,9 @@ const TONES = {
 
 /* ==========================================================
    StatCard — headline metric.
+
+   Mockup shape: icon tile top-left with a small chart glyph
+   top-right, then the label, the value and a violet caption.
    `value` should always come from real backend data.
 ========================================================== */
 
@@ -58,30 +62,32 @@ function StatCard({
             />
 
             <div className="flex items-start justify-between gap-4">
-                <p className="eyebrow">{title}</p>
+                <span
+                    className={cn(
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset",
+                        palette.icon
+                    )}
+                >
+                    <Icon size={18} />
+                </span>
 
-                {Icon && (
-                    <span
-                        className={cn(
-                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset",
-                            palette.icon
-                        )}
-                    >
-                        <Icon size={17} />
-                    </span>
-                )}
+                <BarChart3 size={15} className="mt-1 shrink-0 text-slate-700" />
             </div>
 
+            <p className="mt-5 truncate text-sm text-slate-500">{title}</p>
+
             {loading ? (
-                <div className="skeleton mt-4 h-9 w-20 rounded-lg" />
+                <div className="skeleton mt-2 h-9 w-20 rounded-lg" />
             ) : (
-                <p className="mt-3 text-3xl font-bold tracking-tight text-slate-50">
+                <p className="mt-1 text-3xl font-bold tracking-tight text-slate-50">
                     {value}
                 </p>
             )}
 
             {hint && (
-                <p className="mt-1.5 text-xs text-slate-500">{hint}</p>
+                <p className="mt-1.5 truncate text-xs font-medium text-violet-300/80">
+                    {hint}
+                </p>
             )}
         </div>
     );

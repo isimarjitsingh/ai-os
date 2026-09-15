@@ -7,29 +7,74 @@ import {
     FileText,
     BarChart3,
     Settings,
-    ArrowRight,
+    HelpCircle,
+    Plus,
     X,
     LogOut,
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
 import { initials } from "../../lib/format";
+import { AGENT_TOTALS } from "../../lib/agents";
 import { cn } from "../../lib/cn";
 
 /* ==========================================================
-   Navigation model — one flat list, matching the mockups.
-   Every path here must exist in App.jsx.
+   Navigation model — two labelled groups, matching the mockups.
+
+   WORKSPACE holds the product surfaces, ACCOUNT holds the
+   operator surfaces. Every `path` here must exist in App.jsx.
+
+   There is no support endpoint or address in this product, so
+   "Help & support" points at the in-app knowledge library
+   rather than inventing a contact route.
 ========================================================== */
 
-const NAV_ITEMS = [
-    { name: "Dashboard", icon: LayoutDashboard, path: "/", end: true },
-    { name: "Generate", icon: Sparkles, path: "/generate" },
-    { name: "Projects", icon: FolderOpen, path: "/projects" },
-    { name: "Agents", icon: Bot, path: "/agents" },
-    { name: "Knowledge", icon: FileText, path: "/knowledge" },
-    { name: "Analytics", icon: BarChart3, path: "/analytics" },
-    { name: "Settings", icon: Settings, path: "/settings" },
+const GROUPS = [
+    {
+        label: "Workspace",
+        items: [
+            { name: "Overview", icon: LayoutDashboard, path: "/", end: true },
+            { name: "Generate", icon: Sparkles, path: "/generate" },
+            { name: "Projects", icon: FolderOpen, path: "/projects" },
+            { name: "AI Agents", icon: Bot, path: "/agents", badge: AGENT_TOTALS.total },
+            { name: "Knowledge", icon: FileText, path: "/knowledge" },
+            { name: "Analytics", icon: BarChart3, path: "/analytics" },
+        ],
+    },
+    {
+        label: "Account",
+        items: [
+            { name: "Settings", icon: Settings, path: "/settings" },
+            { name: "Help & support", icon: HelpCircle, path: "/knowledge", plain: true },
+        ],
+    },
 ];
+
+function NavItem({ item, onNavigate }) {
+    const Icon = item.icon;
+
+    /* `plain` items are shortcuts into an existing screen, so they must
+       not light up as active — that would put two highlights on the rail
+       at once (e.g. Knowledge + Help & support both pointing there). */
+    const classes = ({ isActive }) =>
+        cn("nav-row", isActive && !item.plain && "nav-row-active");
+
+    return (
+        <li>
+            <NavLink to={item.path} end={item.end} onClick={onNavigate} className={classes}>
+                <Icon size={16} className="shrink-0" />
+
+                <span className="truncate">{item.name}</span>
+
+                {item.badge ? (
+                    <span className="ml-auto shrink-0 rounded-md bg-violet-500/15 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-violet-300 ring-1 ring-inset ring-violet-400/25">
+                        {item.badge}
+                    </span>
+                ) : null}
+            </NavLink>
+        </li>
+    );
+}
 
 function Sidebar({ open = false, onClose = () => {} }) {
     const { user, logout, isAuthenticated } = useAuth();
@@ -64,117 +109,104 @@ function Sidebar({ open = false, onClose = () => {} }) {
                 )}
             >
                 {/* Brand */}
-                <div className="flex h-16 shrink-0 items-center gap-3 border-b border-[var(--color-line)] px-5">
-                    <div className="brand-gradient flex h-9 w-9 items-center justify-center rounded-xl shadow-lg shadow-violet-900/40">
-                        <Sparkles size={18} className="text-white" />
+                <div className="flex shrink-0 items-center gap-2.5 px-4 pb-4 pt-5">
+                    <div className="brand-gradient flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-lg shadow-violet-900/40">
+                        <Sparkles size={17} className="text-white" />
                     </div>
 
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold tracking-tight text-slate-100">
                             AI Company OS
                         </p>
-                        <p className="truncate text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500">
-                            Autonomous Startup Platform
+                        <p className="section-label mt-0.5 truncate">
+                            Build smarter together
                         </p>
                     </div>
 
                     <button
                         onClick={onClose}
-                        className="icon-btn h-8 w-8 lg:hidden"
+                        className="icon-btn h-8 w-8 shrink-0 lg:hidden"
                         aria-label="Close navigation"
                     >
                         <X size={16} />
                     </button>
                 </div>
 
-                {/* Nav */}
-                <nav className="no-scrollbar flex-1 overflow-y-auto px-4 py-5">
-                    <ul className="space-y-1.5">
-                        {NAV_ITEMS.map((item) => {
-                            const Icon = item.icon;
+                {/* Primary CTA */}
+                <div className="shrink-0 px-4">
+                    <NavLink to="/generate" onClick={onClose} className="btn-solid w-full">
+                        <Plus size={15} />
+                        New workspace
+                    </NavLink>
+                </div>
+                {/* Grouped navigation */}
+                <nav className="no-scrollbar flex-1 overflow-y-auto px-4 pb-4 pt-7">
+                    {GROUPS.map((group, groupIndex) => (
+                        <div key={group.label}>
+                            {groupIndex > 0 && (
+                                <div className="mb-6 mt-7 h-px bg-[var(--color-line)]" />
+                            )}
 
-                            return (
-                                <li key={item.path}>
-                                    <NavLink
-                                        to={item.path}
-                                        end={item.end}
-                                        onClick={onClose}
-                                        className={({ isActive }) =>
-                                            cn(
-                                                "group flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition",
-                                                isActive
-                                                    ? "bg-gradient-to-r from-violet-600/25 to-indigo-500/5 text-white ring-1 ring-inset ring-violet-400/30"
-                                                    : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-100"
-                                            )
-                                        }
-                                    >
-                                        {({ isActive }) => (
-                                            <>
-                                                <Icon
-                                                    size={17}
-                                                    className={cn(
-                                                        "shrink-0 transition",
-                                                        isActive
-                                                            ? "text-violet-300"
-                                                            : "text-slate-500 group-hover:text-violet-300"
-                                                    )}
-                                                />
+                            <p className="section-label px-1">{group.label}</p>
 
-                                                <span className="truncate">{item.name}</span>
-
-                                                {isActive && (
-                                                    <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" />
-                                                )}
-                                            </>
-                                        )}
-                                    </NavLink>
-                                </li>
-                            );
-                        })}
-                    </ul>
+                            <ul className="mt-2.5 space-y-1">
+                                {group.items.map((item) => (
+                                    <NavItem
+                                        key={`${group.label}-${item.name}`}
+                                        item={item}
+                                        onNavigate={onClose}
+                                    />
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
                 </nav>
 
                 {/* Upgrade card */}
-                <div className="mx-4 mb-3 overflow-hidden rounded-2xl border border-violet-400/25 bg-gradient-to-b from-violet-600/20 to-transparent p-4">
-                    <Sparkles size={18} className="text-violet-300" />
+                <div className="shrink-0 px-4 pb-3">
+                    <div className="rounded-xl border border-violet-400/20 bg-violet-500/[0.07] p-4">
+                        <p className="text-sm font-bold leading-snug text-white">
+                            Turn ideas into companies.
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                            Autonomous teams. Real results.
+                        </p>
 
-                    <p className="mt-3 text-sm font-bold leading-snug text-white">
-                        Turn ideas into real companies.
-                    </p>
-                    <p className="mt-1 text-xs text-slate-400">AI agents. Real execution.</p>
-
-                    <NavLink to="/generate" onClick={onClose} className="btn-primary mt-4 w-full text-xs">
-                        Upgrade Plan
-                        <ArrowRight size={13} />
-                    </NavLink>
+                        <NavLink
+                            to="/generate"
+                            onClick={onClose}
+                            className="mt-3.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-violet-400/25 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20"
+                        >
+                            <Sparkles size={13} />
+                            Upgrade plan
+                        </NavLink>
+                    </div>
                 </div>
 
                 {/* Identity */}
-                <div className="shrink-0 border-t border-[var(--color-line)] p-4">
-                    <div className="rounded-2xl bg-white/[0.03] p-3 ring-1 ring-inset ring-slate-400/10">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-bold text-white">
-                                {initials(name)}
-                            </div>
-
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-semibold text-slate-100">
-                                    {name}
-                                </p>
-                                <p className="truncate text-xs text-slate-500">
-                                    {email || (isAuthenticated ? "Active session" : "Signed out")}
-                                </p>
-                            </div>
-
-                            <button
-                                onClick={logout}
-                                title="Log out"
-                                aria-label="Log out"
-                                className="icon-btn h-9 w-9 hover:!border-red-400/40 hover:!bg-red-500/10 hover:!text-red-300"
-                            >
-                                <LogOut size={15} />
-                            </button>
+                <div className="shrink-0 border-t border-[var(--color-line)] px-4 py-3.5">
+                    <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-[11px] font-bold text-white">
+                            {initials(name)}
                         </div>
+
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-[13px] font-semibold text-slate-100">
+                                {name}
+                            </p>
+                            <p className="truncate text-[11px] text-slate-600">
+                                {email || (isAuthenticated ? "Active session" : "Signed out")}
+                            </p>
+                        </div>
+
+                        <button
+                            onClick={logout}
+                            title="Log out"
+                            aria-label="Log out"
+                            className="shrink-0 rounded-lg p-1.5 text-slate-500 transition hover:bg-red-500/10 hover:text-red-300"
+                        >
+                            <LogOut size={15} />
+                        </button>
                     </div>
                 </div>
             </aside>

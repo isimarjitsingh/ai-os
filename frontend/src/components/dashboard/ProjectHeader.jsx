@@ -39,9 +39,9 @@ function ProjectHeader({ project, fileCount = 0, onPreview }) {
                             All projects
                         </Link>
 
-                        <h1 className="truncate text-2xl font-bold tracking-tight text-slate-50 sm:text-3xl">
+                        <h2 className="truncate text-2xl font-bold tracking-tight text-slate-50 sm:text-3xl">
                             {name}
-                        </h1>
+                        </h2>
 
                         <p className="mt-2.5 line-clamp-2 max-w-3xl text-sm leading-relaxed text-slate-400">
                             {project.startup_idea || "No startup idea recorded."}

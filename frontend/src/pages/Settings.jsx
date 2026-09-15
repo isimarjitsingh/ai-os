@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import PageHeader from "../components/ui/PageHeader";
 import Switch from "../components/ui/Switch";
 import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../services/config";
@@ -35,8 +34,6 @@ import { cn } from "../lib/cn";
    read-only and the key, integration, billing and team panels
    are roster content.
 ========================================================== */
-
-const CRUMBS = [{ label: "Home", to: "/" }, { label: "Settings" }];
 
 const TABS = [
     { id: "general", label: "General", icon: SettingsIcon },
@@ -670,15 +667,8 @@ function Settings() {
     };
 
     return (
-        <div className="space-y-7">
-            <PageHeader
-                crumbs={CRUMBS}
-                eyebrow="Account"
-                title="Settings"
-                description="Workspace, appearance, integrations and session controls."
-            />
-
-            <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
+        <div className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
                 {/* ---------- Tab rail ---------- */}
                 <nav className="panel h-fit p-3">
                     <ul className="space-y-1">

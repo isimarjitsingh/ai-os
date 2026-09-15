@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Building2, Layers, Loader2, Rocket } from "lucide-react";
+import { Building2, Layers, Loader2, Rocket, ArrowUpRight } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { generateProject } from "../../services/api";
@@ -289,17 +289,18 @@ function GenerateForm({ onSuccess, preset }) {
             <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full py-4 text-base"
+                className="btn-solid w-full py-3.5 text-[15px]"
             >
                 {loading ? (
                     <>
-                        <Loader2 size={20} className="animate-spin" />
+                        <Loader2 size={18} className="animate-spin" />
                         Starting AI workflow…
                     </>
                 ) : (
                     <>
-                        <Rocket size={19} />
-                        Generate Startup →
+                        <Rocket size={17} />
+                        Launch workspace
+                        <ArrowUpRight size={15} />
                     </>
                 )}
             </button>

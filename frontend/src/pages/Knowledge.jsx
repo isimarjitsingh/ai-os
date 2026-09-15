@@ -1,29 +1,64 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, Search } from "lucide-react";
+import {
+    Search,
+    Plus,
+    FileText,
+    BookOpen,
+    ArrowUpRight,
+    X,
+    AlertTriangle,
+} from "lucide-react";
 
-import PageHeader from "../components/ui/PageHeader";
 import Panel from "../components/ui/Panel";
 import EmptyState from "../components/ui/EmptyState";
 import { Skeleton } from "../components/ui/Skeleton";
 
 import { useProjects } from "../hooks/useProjects";
-import { formatDate, sortByNewest } from "../lib/format";
+import { formatDate, relativeTime, sortByNewest, truncate } from "../lib/format";
 
 /* ==========================================================
-   Knowledge — the report library. Each run stores its
-   department reports on the project, so this indexes real
-   projects and links into their report tabs.
+   Knowledge — the report library.
+
+   Reports are stored on the project row by the agent graph, so
+   this screen indexes real projects and links into their report
+   tabs. The mockup's "Add knowledge" affordance becomes "New
+   workspace": documents land here as a by-product of a run and
+   there is no standalone upload endpoint to wire a button to.
 ========================================================== */
 
-const CRUMBS = [{ label: "Home", to: "/" }, { label: "Knowledge" }];
+function KnowledgeRow({ project }) {
+    return (
+        <li className="border-b border-[var(--color-line)] last:border-0">
+            <Link
+                to={`/project/${project.thread_id}`}
+                className="row-link group px-5 py-4 sm:px-6"
+            >
+                <span className="tile tile-brand h-10 w-10 rounded-xl">
+                    <FileText size={17} />
+                </span>
 
-function chipFor(status) {
-    if (status === "completed") return "chip chip-ok";
-    if (status === "failed") return "chip chip-off";
-    if (status === "running") return "chip chip-run";
+                <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-slate-100 transition group-hover:text-violet-200">
+                        {project.project_name || "Untitled project"}
+                    </span>
 
-    return "chip chip-idle";
+                    <span className="mt-0.5 block truncate text-xs text-slate-500">
+                        {truncate(project.startup_idea || "No idea recorded.", 90)}
+                    </span>
+                </span>
+
+                <span className="hidden w-24 shrink-0 text-right text-xs text-slate-500 sm:block">
+                    {relativeTime(project.created_at) || formatDate(project.created_at)}
+                </span>
+
+                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-violet-300 transition group-hover:text-violet-200">
+                    Open
+                    <ArrowUpRight size={13} />
+                </span>
+            </Link>
+        </li>
+    );
 }
 
 function Knowledge() {
@@ -40,84 +75,101 @@ function Knowledge() {
     });
 
     if (error) {
-        return <EmptyState icon={FileText} title="Could not load the library" description={error} />;
+        return (
+            <div className="panel flex items-center gap-3 p-5">
+                <AlertTriangle size={18} className="shrink-0 text-amber-400" />
+
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-200">
+                        Could not load the library
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">{error}</p>
+                </div>
+            </div>
+        );
     }
 
     return (
-        <div className="space-y-7">
-            <PageHeader
-                crumbs={CRUMBS}
-                eyebrow="Library"
-                title="Knowledge"
-                description="Every report the agent graph has written for your projects — research, marketing, finance, engineering and the executive verdict."
-            />
+        <div className="space-y-6">
+            {/* ---------- Toolbar ---------- */}
+            <div className="panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+                <div className="flex flex-1 items-center gap-2.5 rounded-xl border border-[var(--color-line)] bg-black/30 px-3.5 py-2.5 transition focus-within:border-violet-400/60">
+                    <Search size={15} className="shrink-0 text-slate-500" />
 
+                    <input
+                        value={term}
+                        onChange={(event) => setTerm(event.target.value)}
+                        placeholder="Search your knowledge..."
+                        aria-label="Search knowledge"
+                        className="w-full min-w-0 bg-transparent text-sm text-slate-200 placeholder:text-slate-600"
+                    />
+
+                    {term && (
+                        <button
+                            onClick={() => setTerm("")}
+                            className="shrink-0 text-slate-500 transition hover:text-slate-200"
+                            aria-label="Clear search"
+                        >
+                            <X size={14} />
+                        </button>
+                    )}
+                </div>
+
+                <Link to="/generate" className="btn-solid shrink-0">
+                    <Plus size={15} />
+                    New workspace
+                </Link>
+            </div>
+
+            {/* ---------- Library ---------- */}
             <Panel
-                title="Project reports"
-                subtitle={`${projects.length} ${projects.length === 1 ? "run" : "runs"} indexed`}
-                padded={false}
-                action={
-                    <div className="flex items-center gap-2 rounded-xl border border-[var(--color-line)] bg-black/30 px-3 py-2">
-                        <Search size={14} className="text-slate-500" />
-
-                        <input
-                            value={term}
-                            onChange={(event) => setTerm(event.target.value)}
-                            placeholder="Filter projects…"
-                            className="w-28 bg-transparent text-xs text-slate-200 placeholder:text-slate-600 sm:w-44"
-                        />
-                    </div>
+                title="Knowledge base"
+                subtitle={
+                    loading
+                        ? "Loading documents..."
+                        : `${projects.length} ${projects.length === 1 ? "document" : "documents"} available to your agents.`
                 }
+                icon={BookOpen}
+                padded={false}
             >
                 {loading ? (
-                    <div className="space-y-3 p-5">
+                    <div className="space-y-3 p-5 sm:p-6">
+                        <Skeleton className="h-16 w-full" />
                         <Skeleton className="h-16 w-full" />
                         <Skeleton className="h-16 w-full" />
                     </div>
                 ) : visible.length === 0 ? (
-                    <div className="p-5">
+                    <div className="p-5 sm:p-6">
                         <EmptyState
                             icon={FileText}
-                            title={projects.length ? "No matches" : "No reports yet"}
+                            compact
+                            title={projects.length ? "No matches" : "No documents yet"}
                             description={
                                 projects.length
-                                    ? "No project matches that filter."
-                                    : "Generate a startup and the agents will fill this library."
+                                    ? "No project matches that search."
+                                    : "Generate a workspace and the agents will fill this library."
                             }
                             action={
-                                <Link to="/generate" className="btn-primary text-xs">
-                                    New Startup
-                                </Link>
+                                projects.length ? (
+                                    <button
+                                        onClick={() => setTerm("")}
+                                        className="btn-ghost text-xs"
+                                    >
+                                        Clear search
+                                    </button>
+                                ) : (
+                                    <Link to="/generate" className="btn-solid text-sm">
+                                        <Plus size={15} />
+                                        New workspace
+                                    </Link>
+                                )
                             }
                         />
                     </div>
                 ) : (
-                    <ul className="divide-y divide-slate-400/10">
+                    <ul>
                         {visible.map((project) => (
-                            <li key={project.thread_id} className="px-5 py-4">
-                                <Link
-                                    to={`/project/${project.thread_id}`}
-                                    className="group flex items-start justify-between gap-4"
-                                >
-                                    <span className="min-w-0">
-                                        <span className="block truncate text-sm font-semibold text-slate-100 group-hover:text-violet-200">
-                                            {project.project_name || "Untitled project"}
-                                        </span>
-
-                                        <span className="mt-1 block truncate text-xs text-slate-500">
-                                            {project.startup_idea}
-                                        </span>
-
-                                        <span className="mt-1.5 block text-[11px] text-slate-600">
-                                            {formatDate(project.created_at)}
-                                        </span>
-                                    </span>
-
-                                    <span className={chipFor(project.status)}>
-                                        {project.status || "waiting"}
-                                    </span>
-                                </Link>
-                            </li>
+                            <KnowledgeRow key={project.thread_id} project={project} />
                         ))}
                     </ul>
                 )}
@@ -127,3 +179,4 @@ function Knowledge() {
 }
 
 export default Knowledge;
+

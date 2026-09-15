@@ -137,9 +137,9 @@ function Generation() {
                         </span>
 
                         <div className="min-w-0">
-                            <h1 className="text-2xl font-bold text-white sm:text-3xl">
+                            <h2 className="text-2xl font-bold text-white sm:text-3xl">
                                 Building Your Startup
-                            </h1>
+                            </h2>
 
                             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
                                 The autonomous graph is executing your brief. Every agent

@@ -1,71 +1,94 @@
 import { Link } from "react-router-dom";
-import { ArrowUpRight, FolderOpen } from "lucide-react";
+import { FolderOpen, ArrowUpRight } from "lucide-react";
 
 import Badge from "../ui/Badge";
 import { cn } from "../../lib/cn";
-import {
-    initials,
-    truncate,
-    relativeTime,
-    projectStatusMeta,
-} from "../../lib/format";
+import { truncate, relativeTime, projectStatusMeta } from "../../lib/format";
 
 /* ==========================================================
-   ProjectCard — one real project row from GET /projects
+   ProjectCard — one real project from GET /projects.
+
+   Shape follows the mockups: icon tile, title, status chip,
+   a progress rail, the updated timestamp and an "Open project"
+   affordance.
+
+   The API exposes no per-agent progress field, so the rail is
+   derived only from `status`:
+     completed → full and green
+     failed    → full and red
+     running   → indeterminate animated stripe
+     waiting   → empty
+   Nothing invents a percentage it does not have.
 ========================================================== */
+
+function railFor(status) {
+    if (status === "completed") {
+        return { className: "w-full bg-gradient-to-r from-violet-500 to-indigo-400", width: "100%" };
+    }
+
+    if (status === "failed") {
+        return { className: "w-full bg-red-500/70", width: "100%" };
+    }
+
+    if (status === "running") {
+        return {
+            className: "w-1/3 bg-violet-400 progress-stripes",
+            width: "33%",
+        };
+    }
+
+    return { className: "bg-slate-500/40", width: "4%" };
+}
 
 function ProjectCard({ project, className }) {
     const name = project?.project_name || "Untitled Startup";
     const meta = projectStatusMeta(project?.status);
+    const rail = railFor(project?.status);
 
     return (
         <Link
             to={`/project/${project.thread_id}`}
             className={cn(
-                "panel panel-interactive group block overflow-hidden",
+                "panel panel-interactive group flex flex-col p-5",
                 className
             )}
         >
-            <div className="flex items-start justify-between gap-4 p-5 sm:p-6">
-                {/* Identity */}
-                <div className="flex min-w-0 flex-1 items-start gap-4">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/25 to-indigo-500/10 text-sm font-bold text-violet-200 ring-1 ring-inset ring-violet-400/25">
-                        {initials(name, "?")}
-                    </div>
+            <span className="tile tile-brand h-10 w-10 rounded-xl">
+                <FolderOpen size={17} />
+            </span>
 
-                    <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-base font-bold text-slate-100 transition group-hover:text-violet-200">
-                            {name}
-                        </h3>
+            <h3 className="mt-4 truncate text-base font-bold text-slate-100 transition group-hover:text-violet-200">
+                {name}
+            </h3>
 
-                        <p className="mt-1.5 line-clamp-2 text-sm text-slate-500">
-                            {truncate(project?.startup_idea || "No idea recorded.", 180)}
-                        </p>
+            <p className="mt-1.5 line-clamp-2 min-h-[2.5rem] text-xs leading-relaxed text-slate-500">
+                {truncate(project?.startup_idea || "No idea recorded.", 110)}
+            </p>
 
-                        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
-                            <span className="inline-flex items-center gap-1.5">
-                                <FolderOpen size={13} className="text-slate-600" />
-                                {project?.thread_id?.slice(0, 8) || "—"}
-                            </span>
+            <div className="mt-4 flex items-center justify-between gap-3">
+                <Badge status={project?.status} label={meta.label} />
+            </div>
 
-                            {project?.created_at && (
-                                <span>
-                                    {relativeTime(project.created_at)}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                </div>
+            <div className="rail mt-3">
+                <span
+                    className={rail.className}
+                    style={{ width: rail.width }}
+                    aria-hidden="true"
+                />
+            </div>
 
-                {/* Status */}
-                <div className="flex shrink-0 flex-col items-end gap-3">
-                    <Badge status={project?.status} label={meta.label} />
+            <div className="mt-4 flex items-center justify-between gap-3 border-t border-[var(--color-line)] pt-3.5">
+                <span className="truncate text-[11px] text-slate-600">
+                    {project?.created_at ? relativeTime(project.created_at) : "—"}
+                </span>
 
+                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-violet-300 transition group-hover:text-violet-200">
+                    Open project
                     <ArrowUpRight
-                        size={17}
-                        className="text-slate-600 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-violet-300"
+                        size={13}
+                        className="transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                     />
-                </div>
+                </span>
             </div>
         </Link>
     );
