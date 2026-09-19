@@ -29,14 +29,18 @@ from database.crud import (
 # file blueprint, then a merge. Each answer is roughly half the size, so each
 # one fits a request budget that can actually be enforced, and a blueprint that
 # never arrives no longer takes a completed architecture down with it.
+# Chains are built at runtime inside the agent function so that
+# a user-supplied API key can be passed through CompanyState.
 
-coding_architecture_chain = (
-    CODING_ARCHITECTURE_PROMPT | structured_llm(CodingArchitecture)
-)
 
-coding_blueprint_chain = (
-    CODING_BLUEPRINT_PROMPT | structured_llm(FileBlueprint)
-)
+def _build_architecture_chain(api_key: str | None = None):
+    llm = structured_llm(CodingArchitecture, api_key=api_key)
+    return CODING_ARCHITECTURE_PROMPT | llm
+
+
+def _build_blueprint_chain(api_key: str | None = None):
+    llm = structured_llm(FileBlueprint, api_key=api_key)
+    return CODING_BLUEPRINT_PROMPT | llm
 
 
 # ============================================================
@@ -177,7 +181,7 @@ def coding_agent(state: CompanyState):
         print("\n🤖 Calling Coding LLM - step 1/2: architecture...")
 
         architecture = invoke_structured(
-            coding_architecture_chain,
+            _build_architecture_chain(state.get("api_key")),
             CodingArchitecture,
             {
                 "user_goal": state["user_goal"],
@@ -210,7 +214,7 @@ def coding_agent(state: CompanyState):
         try:
 
             blueprint = invoke_structured(
-                coding_blueprint_chain,
+                _build_blueprint_chain(state.get("api_key")),
                 FileBlueprint,
                 {
                     "user_goal": state["user_goal"],

@@ -11,6 +11,7 @@ from database.models import (
     CodingReport,
     CEOReport,
     GeneratedFile,
+    ApiKey,
 )
 
 
@@ -47,17 +48,6 @@ def get_user_by_email(
     )
 
 
-def get_user_by_id(
-    db: Session,
-    user_id: int
-):
-    return (
-        db.query(User)
-        .filter(User.id == user_id)
-        .first()
-    )
-
-
 def create_user(
     db: Session,
     name: str,
@@ -87,12 +77,14 @@ def create_project(
     thread_id: str,
     startup_idea: str,
     user_id: int,
+    api_key: str | None = None,
 ):
 
     project = Project(
         thread_id=thread_id,
         startup_idea=startup_idea,
         user_id=user_id,
+        api_key=api_key,
         status="running",
     )
 
@@ -567,25 +559,62 @@ def get_generated_file(
 
 
 # ==========================================================
-# DELETE GENERATED FILE
+# API KEYS
 # ==========================================================
 
-def delete_generated_file(
+def get_api_key(
     db: Session,
-    file_id: int,
-    user_id: int,
+    provider: str,
 ):
-
-    file = get_generated_file(
-        db,
-        file_id,
-        user_id
+    return (
+        db.query(ApiKey)
+        .filter(ApiKey.provider == provider)
+        .first()
     )
 
-    if not file:
-        return False
 
-    db.delete(file)
+def get_all_api_keys(
+    db: Session,
+):
+    return db.query(ApiKey).all()
+
+
+def save_api_key(
+    db: Session,
+    provider: str,
+    api_key: str,
+):
+    existing = get_api_key(db, provider)
+
+    if existing:
+        existing.api_key = api_key
+        existing.updated_at = func.now()
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    new_key = ApiKey(
+        provider=provider,
+        api_key=api_key,
+    )
+
+    db.add(new_key)
     db.commit()
+    db.refresh(new_key)
 
-    return True
+    return new_key
+
+
+def delete_api_key(
+    db: Session,
+    provider: str,
+):
+    key = get_api_key(db, provider)
+
+    if key:
+        db.delete(key)
+        db.commit()
+
+    return key
+
+

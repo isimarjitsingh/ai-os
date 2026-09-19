@@ -12,6 +12,8 @@ class CompanyState(TypedDict):
 
     user_id: int
 
+    api_key: str | None
+
     execution_plan: ExecutionPlan
 
     research_report: Optional[dict]

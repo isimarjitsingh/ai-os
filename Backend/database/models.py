@@ -15,6 +15,24 @@ from database import Base
 
 
 # ==========================================================
+# API KEYS
+# ==========================================================
+
+class ApiKey(Base):
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True, index=True)
+    provider = Column(String, unique=True, nullable=False, index=True)
+    api_key = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+
+# ==========================================================
 # USER
 # ==========================================================
 
@@ -102,6 +120,11 @@ class Project(Base):
     startup_idea = Column(
         Text,
         nullable=False
+    )
+
+    api_key = Column(
+        Text,
+        nullable=True
     )
 
     status = Column(

@@ -6,6 +6,3 @@ class ExecutionPlan(BaseModel):
     marketing: bool
     finance: bool
     coding: bool
-    hr: bool
-    sales: bool
-    customer_support: bool

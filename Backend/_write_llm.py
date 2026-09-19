@@ -1,4 +1,4 @@
-import os
+content = r'''import os
 
 from functools import partial
 
@@ -66,3 +66,8 @@ def structured_llm(schema, strict=True, timeout=None, api_key=None):
     ).with_types(output_type=schema)
 
     return bound_llm | output_parser
+'''
+
+with open('llm.py', 'w', encoding='utf-8') as f:
+    f.write(content)
+print('llm.py written successfully')

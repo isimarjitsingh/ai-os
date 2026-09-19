@@ -53,6 +53,7 @@ from database.crud import (
 from auth.dependencies import get_current_user
 from routes.auth import router as auth_router
 from routes.files import router as files_router
+from routes.settings import router as settings_router
 from pathlib import Path
 
 
@@ -136,6 +137,10 @@ app.include_router(
     files_router
 )
 
+app.include_router(
+    settings_router
+)
+
 
 # ==========================================================
 # REQUEST MODELS
@@ -144,6 +149,8 @@ app.include_router(
 class GenerateRequest(BaseModel):
 
     user_goal: str
+
+    api_key: str | None = None
 
 
 # ==========================================================
@@ -219,7 +226,9 @@ def generate(
 
             startup_idea=request.user_goal,
 
-            user_id=current_user.id
+            user_id=current_user.id,
+
+            api_key=request.api_key,
 
         )
 
@@ -509,6 +518,8 @@ async def stream(
 
     user_goal: str,
 
+    api_key: str | None = None,
+
     token: str = None,
 
     current_user=Depends(
@@ -570,7 +581,9 @@ async def stream(
 
             "user_goal": user_goal,
 
-            "user_id": current_user.id
+            "user_id": current_user.id,
+
+            "api_key": api_key,
 
         }
 

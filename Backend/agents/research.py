@@ -24,14 +24,18 @@ from database.crud import (
 # json_schema mode instead of tool calling - tool_choice based structured
 # output intermittently dies with Groq 400 "tool_use_failed" on
 # openai/gpt-oss-120b, which used to crash the whole graph right here.
-research_llm = structured_llm(ResearchOutput)
+# Chains are built at runtime inside the agent functions so that
+# a user-supplied API key can be passed through CompanyState.
 
-chain = RESEARCH_PROMPT | research_llm
 
-# The same schema with a stricter instruction, used once when the first answer
-# came back with empty lists. Temperature is 0, so re-asking the identical
-# prompt returns the identical answer; only changed instructions can change it.
-retry_chain = RESEARCH_RETRY_PROMPT | research_llm
+def _build_chain(api_key: str | None = None):
+    llm = structured_llm(ResearchOutput, api_key=api_key)
+    return RESEARCH_PROMPT | llm
+
+
+def _build_retry_chain(api_key: str | None = None):
+    llm = structured_llm(ResearchOutput, api_key=api_key)
+    return RESEARCH_RETRY_PROMPT | llm
 
 
 # ============================================================
@@ -164,7 +168,7 @@ RESEARCH_FALLBACK_FIELDS = {
 }
 
 
-def _reask_for_lists(prompt_inputs: dict, report: dict, empty: list):
+def _reask_for_lists(prompt_inputs: dict, report: dict, empty: list, api_key: str | None = None):
     """
     One extra request, with the completeness instruction, for the blank fields.
 
@@ -181,7 +185,7 @@ def _reask_for_lists(prompt_inputs: dict, report: dict, empty: list):
     try:
 
         retry = invoke_structured(
-            retry_chain,
+            _build_retry_chain(api_key),
             ResearchOutput,
             prompt_inputs,
             fields=RESEARCH_FALLBACK_FIELDS,
@@ -244,7 +248,7 @@ def research_agent(state: CompanyState):
     }
 
     response = invoke_structured(
-        chain,
+        _build_chain(state.get("api_key")),
         ResearchOutput,
         prompt_inputs,
         fields=RESEARCH_FALLBACK_FIELDS,
@@ -273,7 +277,7 @@ def research_agent(state: CompanyState):
         )
         print("🔎 Research Agent - raw model reply:", response.model_dump())
 
-        report, empty = _reask_for_lists(prompt_inputs, report, empty)
+        report, empty = _reask_for_lists(prompt_inputs, report, empty, state.get("api_key"))
 
     for field in empty:
 

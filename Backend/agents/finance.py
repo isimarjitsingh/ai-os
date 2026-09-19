@@ -16,9 +16,13 @@ from database.crud import (
 )
 
 # json_schema mode - see llm_fallback.py for why tool calling is avoided.
-finance_llm = structured_llm(FinanceOutput)
+# Chain is built at runtime inside the agent function so that
+# a user-supplied API key can be passed through CompanyState.
 
-finance_chain = FINANCE_PROMPT | finance_llm
+
+def _build_chain(api_key: str | None = None):
+    llm = structured_llm(FinanceOutput, api_key=api_key)
+    return FINANCE_PROMPT | llm
 
 
 FINANCE_FALLBACK_FIELDS = {
@@ -69,7 +73,7 @@ def finance_agent(state: CompanyState):
     research = state["research_report"]
 
     response = invoke_structured(
-        finance_chain,
+        _build_chain(state.get("api_key")),
         FinanceOutput,
         {
             "user_goal": state["user_goal"],

@@ -49,10 +49,10 @@ async function request(path, { method = "GET", body, auth = true } = {}) {
    Returns: { success, thread_id, ... }
 ========================================================== */
 
-export async function generateProject(userGoal) {
+export async function generateProject(userGoal, api_key) {
     return request("/generate", {
         method: "POST",
-        body: { user_goal: userGoal },
+        body: { user_goal: userGoal, api_key },
     });
 }
 
@@ -95,4 +95,26 @@ export async function getFile(fileId) {
 
 export async function getProjectFiles(threadId) {
     return request(`/projects/${threadId}/files`);
+}
+
+/* ==========================================================
+    API KEYS
+    Saved per-provider in the backend settings store.
+   ========================================================== */
+
+export async function getApiKeys() {
+    return request("/settings/keys")
+}
+
+export async function saveApiKey(provider, key) {
+    return request("/settings/keys", {
+        method: "POST",
+        body: { provider, key },
+    })
+}
+
+export async function deleteApiKey(provider) {
+    return request(`/settings/keys/${provider}`, {
+        method: "DELETE",
+    })
 }

@@ -15,9 +15,13 @@ from database.crud import (
 )
 
 # json_schema mode - see llm_fallback.py for why tool calling is avoided.
-marketing_llm = structured_llm(MarketingOutput)
+# Chain is built at runtime inside the agent function so that
+# a user-supplied API key can be passed through CompanyState.
 
-marketing_chain = MARKETING_PROMPT | marketing_llm
+
+def _build_chain(api_key: str | None = None):
+    llm = structured_llm(MarketingOutput, api_key=api_key)
+    return MARKETING_PROMPT | llm
 
 
 MARKETING_FALLBACK_FIELDS = {
@@ -66,7 +70,7 @@ def marketing_agent(state: CompanyState):
     research = state["research_report"]
 
     response = invoke_structured(
-        marketing_chain,
+        _build_chain(state.get("api_key")),
         MarketingOutput,
         {
             "user_goal": state["user_goal"],

@@ -32,9 +32,13 @@ from database.crud import (
 # output intermittently dies with Groq 400 "tool_use_failed" on
 # openai/gpt-oss-120b (the original CEO crash that produced empty
 # plans before the fallback existed).
-planner_llm = structured_llm(ExecutionPlan)
+# Chains are built at runtime inside the agent functions so that
+# a user-supplied API key can be passed through CompanyState.
 
-planner_chain = CEO_PLANNER_PROMPT | planner_llm
+
+def _build_planner_chain(api_key: str | None = None):
+    llm = structured_llm(ExecutionPlan, api_key=api_key)
+    return CEO_PLANNER_PROMPT | llm
 
 
 # Fallback plan mirrors the hardcoded plan that ceo_initialize's
@@ -54,9 +58,10 @@ PLANNER_FALLBACK_FIELDS = {
 # CEO FINAL REPORT
 # ============================================================
 
-ceo_llm = structured_llm(CEOFinalOutput)
 
-ceo_chain = CEO_FINAL_PROMPT | ceo_llm
+def _build_ceo_chain(api_key: str | None = None):
+    llm = structured_llm(CEOFinalOutput, api_key=api_key)
+    return CEO_FINAL_PROMPT | llm
 
 
 # Fallback report used when the CEO LLM call cannot be recovered. The
@@ -153,7 +158,7 @@ def ceo_initialize(state: CompanyState):
         print("CEO Initialize - Calling LLM for execution plan...")
 
         execution_plan = invoke_structured(
-            planner_chain,
+            _build_planner_chain(state.get("api_key")),
             ExecutionPlan,
             {
                 "user_goal": state["user_goal"]
@@ -305,7 +310,7 @@ def ceo_finalize(state: CompanyState):
         )
 
         response = invoke_structured(
-            ceo_chain,
+            _build_ceo_chain(state.get("api_key")),
             CEOFinalOutput,
             {
                 "user_goal": state["user_goal"],

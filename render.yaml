@@ -5,6 +5,11 @@
 # Secrets are declared with "sync: false" so Render never overwrites the value
 # you paste into the dashboard; the placeholder here is only a shape hint.
 services:
+  - type: redis
+    name: ai-company-os-redis
+    # Render managed Redis — REDIS_URL is injected automatically.
+    # Free tier is enough for checkpointing; upgrade if you scale workers.
+
   - type: web
     name: ai-company-os-api
     rootDir: Backend
