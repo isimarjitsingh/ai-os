@@ -46,7 +46,7 @@ services:
       # a CORS error that only appears in production. sync: false forces the
       # real frontend origin to be typed in.
       - key: CORS_ORIGINS
-        sync: false # e.g. https://your-app.vercel.app
+        sync: false # e.g. https://ai-37y3105w7-isimarjitsinghs-projects.vercel.app
       - key: DB_ECHO
         value: "false"
 
