@@ -98,7 +98,7 @@ def _allowed_origins():
 app.add_middleware(
     CORSMiddleware,
 
-    allow_origins=["https://ai-os-qxzd.vercel.app"]
+    allow_origins=["https://ai-os-qxzd.vercel.app"],
 
     allow_credentials=True,
 
