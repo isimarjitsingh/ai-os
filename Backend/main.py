@@ -89,7 +89,7 @@ service = GraphService()
 def _allowed_origins():
     raw = os.getenv(
         "CORS_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173",
+        "http://localhost:5173,http://127.0.0.1:5173,https://ai-os-qxzd.vercel.app",
     )
 
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
@@ -98,7 +98,7 @@ def _allowed_origins():
 app.add_middleware(
     CORSMiddleware,
 
-    allow_origins=_allowed_origins(),
+    allow_origins=["https://ai-os-qxzd.vercel.app"]
 
     allow_credentials=True,
 
