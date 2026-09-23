@@ -43,10 +43,10 @@ services:
         sync: false
       # Deliberately NOT defaulted to http://localhost:5173. A hardcoded
       # localhost would deploy cleanly and then fail every browser request with
-      # a CORS error that only appears in production. sync: false forces the
-      # real frontend origin to be typed in.
+      # a CORS error that only appears in production. sync: false preserves the
+      # real frontend origin typed in the Render dashboard.
       - key: CORS_ORIGINS
-        sync: false # e.g. https://ai-37y3105w7-isimarjitsinghs-projects.vercel.app
+        sync: false # e.g. http://localhost:5173,https://ai-os-2-7pt8.onrender.com
       - key: DB_ECHO
         value: "false"
 

@@ -86,11 +86,15 @@ service = GraphService()
 # request reached the API. Origins now come from the environment;
 # allow_credentials is on, so "*" cannot be used as a wildcard here and every
 # allowed origin must be spelled out.
+DEFAULT_ALLOWED_ORIGINS = (
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://ai-os-2-7pt8.onrender.com",
+)
+
+
 def _allowed_origins():
-    raw = os.getenv(
-        "CORS_ORIGINS",
-        "http://localhost:5173,http://127.0.0.1:5173,https://ai-os-qxzd.vercel.app",
-    )
+    raw = os.getenv("CORS_ORIGINS", ",".join(DEFAULT_ALLOWED_ORIGINS))
 
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
