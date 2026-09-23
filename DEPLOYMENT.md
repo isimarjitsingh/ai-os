@@ -17,7 +17,7 @@ via Docker, **Vercel or Netlify** for the frontend.
 | Generated project files lived in `Backend/generated_projects/` | That directory is a container's temporary filesystem: intact locally, empty after any redeploy, never shared between instances. The database recorded file *paths* only, so a project kept listing files whose bytes were gone | New `generated_files.contents` column stores the text itself; `routes/files.py` reads the database first, disk only as a dev fallback |
 | `DATABASE_URL` pointed at `localhost:5432` | Nothing listens there on a hosted platform | Neon pooled URL |
 | No connection-pool hardening | A pooler drops idle server connections silently; the first request after a quiet period died with "server closed the connection unexpectedly" | `pool_pre_ping`, `pool_recycle=300`, bounded pool |
-| CORS origins hardcoded to `localhost:5173` | A deployed frontend on another origin was blocked by the browser before any request reached the API | `CORS_ORIGINS` env, comma-separated |
+| CORS allowlist omitted the deployed Render origin | A deployed frontend on another origin was blocked by the browser before any request reached the API | `CORS_ORIGINS` env, comma-separated |
 | COOP/COEP headers set in `vite.config.js` | That block configures the **dev server**. Production static hosts ignore it, so `window.crossOriginIsolated` was false and WebContainer refused to boot | `frontend/public/_headers` |
 | `requirements.txt` saved as UTF-16 LE with a BOM | PowerShell's `>` redirect writes UTF-16. pip sniffs the BOM and copes, but a Linux build and plain `open()` break on the NUL bytes between characters | Resaved as UTF-8 |
 | Emoji `print()` in request handlers | Python takes stdout's encoding from the locale. Under a redirected Windows console (cp1252) or a C-locale container the print raised `UnicodeEncodeError` *out of the handler*, turning a successful request into a 500 | `main.py` forces stdout/stderr to UTF-8 with lossy fallback; Dockerfile sets `PYTHONUTF8=1` |
@@ -77,7 +77,7 @@ access to every user's data, which also means any JWT in circulation is moot.
 ```
 DATABASE_URL="postgresql://...-pooler.<region>.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 SECRET_KEY="<python -c 'import secrets;print(secrets.token_urlsafe(48))'>"
-CORS_ORIGINS="http://localhost:5173,https://your-frontend.example"
+CORS_ORIGINS="http://localhost:5173,http://127.0.0.1:5173,https://ai-os-2-7pt8.onrender.com"
 DB_ECHO=false
 ```
 
