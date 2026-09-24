@@ -89,7 +89,7 @@ service = GraphService()
 DEFAULT_ALLOWED_ORIGINS = (
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://ai-os-2-7pt8.onrender.com",
+    "https://ai-os-qxzd.vercel.app",  # ← frontend URL
 )
 
 
