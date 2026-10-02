@@ -19,7 +19,7 @@ import toast from "react-hot-toast";
 import Switch from "../components/ui/Switch";
 import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../services/config";
-import { readPrefs, writePrefs } from "../lib/prefs";
+import { applyTheme, readPrefs, writePrefs } from "../lib/prefs";
 import { INDUSTRIES, PROJECT_TYPES } from "../lib/industries";
 import { formatDate, initials } from "../lib/format";
 import { cn } from "../lib/cn";
@@ -262,8 +262,7 @@ function AppearanceSection({ draft, set }) {
             </div>
 
             <p className="text-xs text-slate-600">
-                The console ships dark-only today — Light and System are stored as a preference and
-                applied when the light palette lands.
+                Light mode uses a white and parrot-green palette. Theme changes apply immediately.
             </p>
         </section>
     );
@@ -589,6 +588,7 @@ function Settings() {
 
     function set(key, value) {
         setDraft((prev) => ({ ...prev, [key]: value }));
+        if (key === "theme") applyTheme(value);
     }
 
     async function handleRefresh() {
@@ -603,7 +603,9 @@ function Settings() {
     }
 
     function handleCancel() {
-        setDraft(readPrefs());
+        const prefs = readPrefs();
+        setDraft(prefs);
+        applyTheme(prefs.theme);
         toast("Changes discarded", { icon: "↩" });
     }
 
@@ -728,11 +730,3 @@ function Settings() {
 }
 
 export default Settings;
-
-
-
-
-
-
-
-

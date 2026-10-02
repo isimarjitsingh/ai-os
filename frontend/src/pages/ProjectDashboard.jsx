@@ -213,8 +213,8 @@ function ProjectDashboard() {
 
             {/* ---------------- preview modal ---------------- */}
             {showPreview && (
-                <div className="fixed inset-0 z-[60] flex flex-col bg-black/80 p-3 backdrop-blur-sm sm:p-6">
-                    <div className="mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-slate-400/15 bg-[#0b0e1c] shadow-2xl">
+                <div className="light-surface-backdrop fixed inset-0 z-[60] flex flex-col bg-black/80 p-3 backdrop-blur-sm sm:p-6">
+                    <div className="light-surface-modal mx-auto flex h-full w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-slate-400/15 bg-[#0b0e1c] shadow-2xl">
                         <div className="flex items-center justify-between gap-4 border-b border-slate-400/10 px-5 py-3.5">
                             <div className="min-w-0">
                                 <h2 className="truncate text-sm font-bold text-slate-100">
@@ -255,4 +255,3 @@ function ProjectDashboard() {
 }
 
 export default ProjectDashboard;
-

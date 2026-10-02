@@ -97,7 +97,7 @@ function Header({ onMenu }) {
                     <div className="min-w-0">
                         <p className="section-label">{longDate()}</p>
 
-                        <h1 className="mt-1.5 text-[26px] font-bold leading-tight tracking-tight text-slate-50 xl:text-[32px]">
+                        <h1 className="mt-1.5 text-[22px] font-bold leading-tight tracking-tight text-slate-50 xl:text-[28px]">
                             {title}
                         </h1>
 
@@ -144,7 +144,7 @@ function Header({ onMenu }) {
 
                     {notificationsOpen && (
                         <div
-                            className="absolute right-0 top-12 z-30 w-[min(23rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-violet-400/20 bg-[#111225]/95 shadow-2xl shadow-black/50 backdrop-blur-xl"
+                            className="light-surface-menu absolute right-0 top-12 z-30 w-[min(23rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-violet-400/20 bg-[#111225]/95 shadow-2xl shadow-black/50 backdrop-blur-xl"
                         >
                             <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3.5">
                                 <div>

@@ -34,6 +34,18 @@ export function readPrefs() {
     }
 }
 
+export function applyTheme(theme = readPrefs().theme) {
+    const resolvedTheme =
+        theme === "system"
+            ? window.matchMedia("(prefers-color-scheme: light)").matches
+                ? "light"
+                : "dark"
+            : theme;
+
+    document.documentElement.dataset.theme = resolvedTheme;
+    document.documentElement.style.colorScheme = resolvedTheme;
+}
+
 export function writePrefs(patch) {
     const next = { ...readPrefs(), ...patch };
 
@@ -43,6 +55,7 @@ export function writePrefs(patch) {
         /* private mode / quota — keep the UI responsive anyway */
     }
 
+    applyTheme(next.theme);
     return next;
 }
 
