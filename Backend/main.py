@@ -3,6 +3,7 @@ import json
 import os
 import sys
 import threading
+import time
 import asyncio
 import traceback
 
@@ -48,6 +49,7 @@ from services.workflow_manager import workflow_manager
 
 from database.database import SessionLocal, engine, Base
 from database import models
+from database.ensure_schema import ensure_schema
 
 from database.crud import (
     create_project,
@@ -67,7 +69,57 @@ from pathlib import Path
 # DATABASE
 # ==========================================================
 
-Base.metadata.create_all(bind=engine)
+# create_all() adds missing TABLES but never missing COLUMNS, so a database
+# that predates a model change keeps its old shape: the first query that
+# selects a newly declared column raises 'column <name> does not exist', which
+# on a deployed backend masquerades as a CORS block in the browser.
+# ensure_schema() is the superset of create_all - missing tables AND missing
+# columns, add-only, idempotent - so it is safe to run on every startup and a
+# deploy can no longer leave the database stale. It must not crash the app when
+# it fails (bad credentials, a cold database still waking up): the container
+# boots anyway, /health reports the database state, and the database routes
+# answer readable 500s instead of the process die-looping and hiding the real
+# problem. The retries absorb a slow first connect on a serverless database
+# without changing anything on the happy path.
+def _repair_schema_on_startup():
+
+    attempts = 3
+    retry_wait = 4
+
+    for attempt in range(1, attempts + 1):
+
+        try:
+            ensure_schema()
+            print("schema: matches the current model", flush=True)
+            return
+        except Exception as error:
+            print(
+                "\nSCHEMA REPAIR attempt {}/{} failed:\n{}".format(
+                    attempt,
+                    attempts,
+                    "".join(
+                        traceback.format_exception(
+                            type(error),
+                            error,
+                            error.__traceback__
+                        )
+                    )
+                ),
+                flush=True
+            )
+
+            if attempt < attempts:
+                time.sleep(retry_wait)
+
+    print(
+        "\nSCHEMA REPAIR FAILED AFTER {} ATTEMPTS - the app starts with the "
+        "database in its current state; the database routes will report the "
+        "failure and the full tracebacks are above".format(attempts),
+        flush=True
+    )
+
+
+_repair_schema_on_startup()
 
 
 # ==========================================================

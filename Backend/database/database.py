@@ -30,6 +30,17 @@ DB_ECHO = os.getenv("DB_ECHO", "false").strip().lower() in ("1", "true", "yes", 
 # those dead sockets produced "server closed the connection unexpectedly" on the
 # first request after a quiet period. pool_pre_ping validates a connection
 # before use and pool_recycle replaces them well before the pooler gives up.
+# connect_timeout is a keyword of the Postgres driver (psycopg2): capped here
+# so an unreachable or still-waking-up database fails fast and reports the
+# reason instead of hanging a request for minutes. It is not a keyword of
+# every driver (SQLite rejects it outright), so it is only passed on the
+# postgres URLs the app actually runs against.
+connect_args = {}
+
+if DATABASE_URL.split("://", 1)[0].startswith("postgres"):
+    connect_args["connect_timeout"] = 20
+
+
 engine = create_engine(
     DATABASE_URL,
     echo=DB_ECHO,
@@ -38,7 +49,7 @@ engine = create_engine(
     pool_recycle=300,
     pool_size=int(os.getenv("DB_POOL_SIZE", "5")),
     max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "5")),
-    connect_args={"connect_timeout": 20},
+    connect_args=connect_args,
 )
 
 

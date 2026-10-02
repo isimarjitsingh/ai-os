@@ -21,7 +21,7 @@ via Docker, **Vercel or Netlify** for the frontend.
 | COOP/COEP headers set in `vite.config.js` | That block configures the **dev server**. Production static hosts ignore it, so `window.crossOriginIsolated` was false and WebContainer refused to boot | `frontend/public/_headers` |
 | `requirements.txt` saved as UTF-16 LE with a BOM | PowerShell's `>` redirect writes UTF-16. pip sniffs the BOM and copes, but a Linux build and plain `open()` break on the NUL bytes between characters | Resaved as UTF-8 |
 | Emoji `print()` in request handlers | Python takes stdout's encoding from the locale. Under a redirected Windows console (cp1252) or a C-locale container the print raised `UnicodeEncodeError` *out of the handler*, turning a successful request into a 500 | `main.py` forces stdout/stderr to UTF-8 with lossy fallback; Dockerfile sets `PYTHONUTF8=1` |
-| Unhandled errors (e.g. a stale database schema) inside `/projects` | Starlette answers an escaped exception from the outermost `ServerErrorMiddleware`, which sits **above** the CORS middleware: the bare 500 carries no `Access-Control-Allow-Origin`, so the browser reports "blocked by CORS policy" and hides the real reason. A pre-existing database missing a column the model now expects is the usual trigger, because `create_all` adds tables, never columns | The DB-touching routes (`/projects`, `/projects/{id}`, `/generate`, `/files/{id}`, `/stream/{id}`) catch `SQLAlchemyError` and answer a readable JSON 500 *through* the CORS layer; the full traceback is logged as `DATABASE ERROR <route>:`. `migrations/ensure_schema.py` adds every missing column at once |
+| Unhandled errors (e.g. a stale database schema) inside `/projects` | Starlette answers an escaped exception from the outermost `ServerErrorMiddleware`, which sits **above** the CORS middleware: the bare 500 carries no `Access-Control-Allow-Origin`, so the browser reports "blocked by CORS policy" and hides the real reason. A pre-existing database missing a column the model now expects is the usual trigger, because `create_all` adds tables, never columns | The DB-touching routes (`/projects`, `/projects/{id}`, `/generate`, `/files/{id}`, `/stream/{id}`) catch `SQLAlchemyError` and answer a readable JSON 500 *through* the CORS layer; the full traceback is logged as `DATABASE ERROR <route>:`. `ensure_schema()` now runs on every startup and adds every missing column automatically (add-only, idempotent), so a stale schema no longer survives a deploy; `migrations/ensure_schema.py` remains the manual form |
 
 ### One thing that is still true
 
@@ -49,15 +49,20 @@ Already done for this project: the URL in `Backend/.env` uses the **pooled** hos
 Use the pooled host, not the direct one. The direct host opens a real server
 process per connection and exhausts Neon's limit under a web app's churn.
 
-`create_all` runs at import, so on a fresh Neon database the schema appears on
-first boot. Verified: 8 tables, including `generated_files.contents`.
+`ensure_schema()` runs at import - the superset of `create_all`: missing tables
+**and** missing columns - so on a fresh Neon database the schema appears on
+first boot, and a database that predates a model change repairs itself on the
+next deploy. Verified: 8 tables, including `generated_files.contents`.
 
 **One catch: `create_all` adds missing *tables*, never missing *columns*.** If
-a model gained a column after the database already existed, the live table keeps
-its old shape and the first query that selects the new column raises
-`column ... does not exist`. On the deployed backend that used to surface in the
-browser as an opaque CORS block (the 500 escaped the CORS middleware - see the
-table above). If that happens after a model change, run:
+a model gained a column after the database already existed, the live table
+keeps its old shape and the first query that selects the new column raises
+`column ... does not exist`. On the deployed backend that used to surface in
+the browser as an opaque CORS block (the 500 escaped the CORS middleware - see
+the table above). The app now closes that gap itself: `ensure_schema()` runs on
+every startup (add-only, idempotent), so a stale database repairs itself on the
+next deploy - no manual step. If you still need to run it by hand against a
+database the app cannot reach on its own:
 
 ```
 python migrations/ensure_schema.py
@@ -204,7 +209,7 @@ reach Neon (VPC/private networking restrictions are the usual surprise).
 | `verify_setup.py` | Asserts env, pool settings, Neon schema and routes |
 | `test_deploy_e2e.py` | Health, auth, forged-token refusal, and the database-only file read |
 | `migrations/add_generated_file_contents.py` | `create_all` adds tables, never columns. Run once against any **pre-existing** database (e.g. local `ai_company_os`) to add the column |
-| `migrations/ensure_schema.py` | The general form of the above: compares the live schema against `database.models` and adds **every** missing column, add-only and idempotent. Run after any model change against a pre-existing database |
+| `migrations/ensure_schema.py` | CLI wrapper around `database/ensure_schema.py`: compares the live schema against `database.models` and adds **every** missing column, add-only and idempotent. The app runs the same function automatically on every startup; this manual form is for a database the running app cannot reach |
 | `migrations/backfill_file_contents.py` | Fills `contents` for rows written before the column existed, reading from local disk |
 | `migrations/copy_local_to_target.py` | Copies every row from local Postgres into `DATABASE_URL`, FK-safe order, sequences reset. Add `--verify-only` to compare source and target without writing |
 | `fix_requirements_encoding.py` | Re-runnable UTF-16 to UTF-8 guard for `requirements.txt` |
