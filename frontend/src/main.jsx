@@ -5,8 +5,11 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 
 import { AuthProvider } from "./context/AuthContext";
+import { applyTheme } from "./lib/prefs";
 
 import "./index.css";
+
+applyTheme();
 
 
 ReactDOM.createRoot(

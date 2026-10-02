@@ -34,12 +34,12 @@ function AuthShell({ eyebrow, title, subtitle, children, footer }) {
     return (
         <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
             {/* ---------- Brand panel ---------- */}
-            <div className="relative hidden flex-col justify-between overflow-hidden border-r border-white/5 bg-[var(--color-canvas)] p-12 lg:flex">
+            <div className="auth-brand-panel relative hidden flex-col justify-between overflow-hidden border-r border-white/5 bg-[var(--color-canvas)] p-8 xl:p-10 lg:flex">
                 <div
                     className="pointer-events-none absolute inset-0 opacity-70"
                     style={{
                         background:
-                            "radial-gradient(40rem 30rem at 20% 15%, rgba(124,58,237,0.32), transparent 60%), radial-gradient(34rem 26rem at 80% 85%, rgba(37,99,235,0.24), transparent 60%)",
+                            "radial-gradient(40rem 30rem at 20% 15%, var(--brand-glow-strong), transparent 60%), radial-gradient(34rem 26rem at 80% 85%, var(--brand-glow-soft), transparent 60%)",
                     }}
                 />
 
@@ -84,7 +84,7 @@ function AuthShell({ eyebrow, title, subtitle, children, footer }) {
 
                 {/* pitch */}
                 <div className="relative max-w-lg">
-                    <h2 className="text-4xl font-bold leading-[1.15] tracking-tight text-white">
+                    <h2 className="text-3xl font-bold leading-[1.15] tracking-tight text-white xl:text-4xl">
                         Describe a startup.
                         <br />
                         <span className="gradient-text">
@@ -92,13 +92,13 @@ function AuthShell({ eyebrow, title, subtitle, children, footer }) {
                         </span>
                     </h2>
 
-                    <p className="mt-5 text-[15px] leading-relaxed text-slate-400">
+                    <p className="mt-4 text-sm leading-relaxed text-slate-400">
                         An autonomous graph turns one paragraph into market research, a
                         go-to-market plan, a financial model, a technical blueprint and real
                         project files.
                     </p>
 
-                    <div className="mt-10 space-y-5">
+                    <div className="mt-7 space-y-4">
                         {PILLARS.map((pillar) => {
                             const Icon = pillar.icon;
 
@@ -165,9 +165,9 @@ function AuthShell({ eyebrow, title, subtitle, children, footer }) {
             </div>
 
             {/* ---------- Form panel: light card ---------- */}
-            <div className="flex items-center justify-center bg-[#f7f7fb] p-6 sm:p-8">
-                <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl sm:p-10">
-                    <Link to="/" className="mb-8 flex items-center justify-center gap-3 lg:hidden">
+            <div className="auth-form-panel flex items-center justify-center bg-[#f7f7fb] p-4 sm:p-6">
+                <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
+                    <Link to="/" className="mb-6 flex items-center justify-center gap-3 lg:hidden">
                         <span className="brand-gradient flex h-9 w-9 items-center justify-center rounded-xl">
                             <Sparkles size={17} className="text-white" />
                         </span>
@@ -179,16 +179,16 @@ function AuthShell({ eyebrow, title, subtitle, children, footer }) {
                         {eyebrow}
                     </p>
 
-                    <h1 className="mt-3 text-center text-3xl font-bold tracking-tight text-slate-900">
+                    <h1 className="mt-3 text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                         {title}
                     </h1>
 
                     <p className="mt-2 text-center text-sm text-slate-500">{subtitle}</p>
 
-                    <div className="mt-8">{children}</div>
+                    <div className="mt-6">{children}</div>
 
                     {footer && (
-                        <div className="mt-8 border-t border-slate-200 pt-6 text-center text-sm text-slate-500">
+                        <div className="mt-6 border-t border-slate-200 pt-5 text-center text-sm text-slate-500">
                             {footer}
                         </div>
                     )}

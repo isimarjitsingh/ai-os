@@ -7,7 +7,7 @@ import { Outlet } from "react-router-dom";
 
 function PublicLayout() {
     return (
-        <div className="min-h-screen bg-[#05060e]">
+        <div className="min-h-screen bg-[var(--color-canvas)]">
             <Outlet />
         </div>
     );

@@ -9,7 +9,7 @@ import { useAuth } from "../context/AuthContext";
 
 function Splash() {
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-[#05060e]">
+        <div className="flex min-h-screen flex-col items-center justify-center gap-5 bg-[var(--color-canvas)]">
             <div className="brand-gradient flex h-12 w-12 animate-pulse items-center justify-center rounded-2xl shadow-xl shadow-violet-900/40">
                 <Sparkles size={22} className="text-white" />
             </div>
