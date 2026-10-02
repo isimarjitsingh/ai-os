@@ -18,7 +18,7 @@ via Docker, **Vercel or Netlify** for the frontend.
 | `DATABASE_URL` pointed at `localhost:5432` | Nothing listens there on a hosted platform | Neon pooled URL |
 | No connection-pool hardening | A pooler drops idle server connections silently; the first request after a quiet period died with "server closed the connection unexpectedly" | `pool_pre_ping`, `pool_recycle=300`, bounded pool |
 | CORS allowlist omitted the deployed Render origin | A deployed frontend on another origin was blocked by the browser before any request reached the API | `CORS_ORIGINS` env, comma-separated |
-| COOP/COEP headers set in `vite.config.js` | That block configures the **dev server**. Production static hosts ignore it, so `window.crossOriginIsolated` was false and WebContainer refused to boot | `frontend/public/_headers` |
+| COOP/COEP headers set in `vite.config.js` | That block configures the **dev server**. Production static hosts ignore it, so `window.crossOriginIsolated` was false and WebContainer refused to boot | `frontend/vercel.json` `headers` block (Netlify would use `public/_headers`) |
 | `requirements.txt` saved as UTF-16 LE with a BOM | PowerShell's `>` redirect writes UTF-16. pip sniffs the BOM and copes, but a Linux build and plain `open()` break on the NUL bytes between characters | Resaved as UTF-8 |
 | Emoji `print()` in request handlers | Python takes stdout's encoding from the locale. Under a redirected Windows console (cp1252) or a C-locale container the print raised `UnicodeEncodeError` *out of the handler*, turning a successful request into a 500 | `main.py` forces stdout/stderr to UTF-8 with lossy fallback; Dockerfile sets `PYTHONUTF8=1` |
 | Unhandled errors (e.g. a stale database schema) inside `/projects` | Starlette answers an escaped exception from the outermost `ServerErrorMiddleware`, which sits **above** the CORS middleware: the bare 500 carries no `Access-Control-Allow-Origin`, so the browser reports "blocked by CORS policy" and hides the real reason. A pre-existing database missing a column the model now expects is the usual trigger, because `create_all` adds tables, never columns | The DB-touching routes (`/projects`, `/projects/{id}`, `/generate`, `/files/{id}`, `/stream/{id}`) catch `SQLAlchemyError` and answer a readable JSON 500 *through* the CORS layer; the full traceback is logged as `DATABASE ERROR <route>:`. `ensure_schema()` now runs on every startup and adds every missing column automatically (add-only, idempotent), so a stale schema no longer survives a deploy; `migrations/ensure_schema.py` remains the manual form |
@@ -143,10 +143,12 @@ time, so:
 - Anyone who downloads the bundle can read the backend URL. That is expected;
   it is why no API key may ever live in a `VITE_*` variable.
 
-`dist/_headers` is emitted too (Vite copies `public/` into `dist`), carrying
-COOP/COEP; Vercel and Netlify both honour that file. Without it
-`window.crossOriginIsolated` stays false and the WebContainer preview refuses to
-boot. On your own nginx, add the two headers to the server block yourself.
+`dist/_headers` is emitted too (Vite copies `public/` into `dist`) — but that file
+is a **Netlify** convention: Vercel ignores it and reads its headers from
+`frontend/vercel.json` instead, where the COOP/COEP pair must live. Without the
+two headers `window.crossOriginIsolated` stays false and the WebContainer preview
+refuses to boot. On your own nginx, add the two headers to the server block
+yourself.
 
 Note the build warns that the main chunk is ~1000 kB (341 kB gzipped). It works;
 it is just a slow first paint, and the fix is dynamic `import()` on the heavy
