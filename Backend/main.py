@@ -4,6 +4,7 @@ import os
 import sys
 import threading
 import asyncio
+import traceback
 
 
 # ==========================================================
@@ -26,12 +27,17 @@ for _stream in (sys.stdout, sys.stderr):
 from fastapi import (
     FastAPI,
     Depends,
-    HTTPException
+    HTTPException,
+    Request
 )
+
+from fastapi.responses import JSONResponse
 
 from fastapi.middleware.cors import CORSMiddleware
 
 from sqlalchemy import text
+
+from sqlalchemy.exc import SQLAlchemyError
 
 from pydantic import BaseModel
 
@@ -72,6 +78,97 @@ app = FastAPI(
     title="AI Company OS API",
     version="1.0.0"
 )
+
+
+# ==========================================================
+# DATABASE ERROR RESPONSE
+# ==========================================================
+
+# An exception that escapes a route handler is answered by Starlette's outermost
+# ServerErrorMiddleware, which sits ABOVE the CORS middleware: the bare
+# "Internal Server Error" 500 that leaves that layer carries no
+# Access-Control-Allow-Origin header, so the browser reports it as
+# "blocked by CORS policy" and hides the real reason. A database failure inside
+# /projects is the most common escape (for example a pre-existing database whose
+# table is missing a column this model now expects - create_all() adds tables,
+# never columns). Catching the error in the route turns it into an HTTPException
+# that travels through the CORS layer, so the frontend receives a readable 500
+# instead of an opaque CORS block, and the full traceback stays in the logs.
+def db_error_response(
+    error: Exception,
+    operation: str
+) -> JSONResponse:
+
+    print(
+        "\nDATABASE ERROR {}:\n{}".format(
+            operation,
+            "".join(
+                traceback.format_exception(
+                    type(error),
+                    error,
+                    error.__traceback__
+                )
+            )
+        ),
+        flush=True
+    )
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": (
+                "Database error during {}: {} ({}) - "
+                "check the server logs for the full traceback.".format(
+                    operation,
+                    type(error).__name__,
+                    str(error)
+                )
+            )
+        }
+    )
+
+
+# ==========================================================
+# UNHANDLED EXCEPTIONS (SAFETY NET)
+# ==========================================================
+
+# A last-resort safety net for anything that still escapes a route: a bug in
+# shared code, an unexpected SDK error, ... Starlette routes this handler to
+# the outermost ServerErrorMiddleware layer, so the 500 it answers still does
+# not carry CORS headers - but unlike the default bare "Internal Server
+# Error" text, it logs the full traceback to stdout (kept by Render) and gives
+# the client a JSON body that names the error. The route-level handlers above
+# remain the real fix, because they answer BEFORE this layer, through CORS.
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(
+    request: Request,
+    error: Exception
+):
+
+    print(
+        "\nUNHANDLED EXCEPTION on {} {}:\n{}".format(
+            request.method,
+            request.url.path,
+            "".join(
+                traceback.format_exception(
+                    type(error),
+                    error,
+                    error.__traceback__
+                )
+            )
+        ),
+        flush=True
+    )
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Internal server error: {} - "
+                      "check the server logs.".format(
+                          type(error).__name__
+                      )
+        }
+    )
 
 
 service = GraphService()
@@ -222,19 +319,31 @@ def generate(
         # SAVE PROJECT FOR CURRENT USER
         # --------------------------------------------------
 
-        project = create_project(
+        try:
 
-            db=db,
+            project = create_project(
 
-            thread_id=thread_id,
+                db=db,
 
-            startup_idea=request.user_goal,
+                thread_id=thread_id,
 
-            user_id=current_user.id,
+                startup_idea=request.user_goal,
 
-            api_key=request.api_key,
+                user_id=current_user.id,
 
-        )
+                api_key=request.api_key,
+
+            )
+
+        except SQLAlchemyError as error:
+
+            return db_error_response(
+
+                error=error,
+
+                operation="POST /generate"
+
+            )
 
         return {
 
@@ -266,13 +375,25 @@ def get_projects(
 
     try:
 
-        projects = get_all_projects(
+        try:
 
-            db=db,
+            projects = get_all_projects(
 
-            user_id=current_user.id
+                db=db,
 
-        )
+                user_id=current_user.id
+
+            )
+
+        except SQLAlchemyError as error:
+
+            return db_error_response(
+
+                error=error,
+
+                operation="GET /projects"
+
+            )
 
         return [
 
@@ -325,15 +446,27 @@ def get_single_project(
         # Only return project belonging to logged-in user
         # --------------------------------------------------
 
-        project = get_complete_project(
+        try:
 
-            db=db,
+            project = get_complete_project(
 
-            thread_id=thread_id,
+                db=db,
 
-            user_id=current_user.id
+                thread_id=thread_id,
 
-        )
+                user_id=current_user.id
+
+            )
+
+        except SQLAlchemyError as error:
+
+            return db_error_response(
+
+                error=error,
+
+                operation="GET /projects/{thread_id}"
+
+            )
 
         if project is None:
 
@@ -407,15 +540,27 @@ def get_file(
         # GET FILE ONLY IF IT BELONGS TO CURRENT USER
         # --------------------------------------------------
 
-        file = get_generated_file(
+        try:
 
-            db=db,
+            file = get_generated_file(
 
-            file_id=file_id,
+                db=db,
 
-            user_id=current_user.id
+                file_id=file_id,
 
-        )
+                user_id=current_user.id
+
+            )
+
+        except SQLAlchemyError as error:
+
+            return db_error_response(
+
+                error=error,
+
+                operation="GET /files/{file_id}"
+
+            )
 
         if file is None:
 
@@ -540,15 +685,27 @@ async def stream(
 
     try:
 
-        project = get_complete_project(
+        try:
 
-            db=db,
+            project = get_complete_project(
 
-            thread_id=thread_id,
+                db=db,
 
-            user_id=current_user.id
+                thread_id=thread_id,
 
-        )
+                user_id=current_user.id
+
+            )
+
+        except SQLAlchemyError as error:
+
+            return db_error_response(
+
+                error=error,
+
+                operation="GET /stream/{thread_id}"
+
+            )
 
         if project is None:
 

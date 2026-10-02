@@ -21,6 +21,7 @@ via Docker, **Vercel or Netlify** for the frontend.
 | COOP/COEP headers set in `vite.config.js` | That block configures the **dev server**. Production static hosts ignore it, so `window.crossOriginIsolated` was false and WebContainer refused to boot | `frontend/public/_headers` |
 | `requirements.txt` saved as UTF-16 LE with a BOM | PowerShell's `>` redirect writes UTF-16. pip sniffs the BOM and copes, but a Linux build and plain `open()` break on the NUL bytes between characters | Resaved as UTF-8 |
 | Emoji `print()` in request handlers | Python takes stdout's encoding from the locale. Under a redirected Windows console (cp1252) or a C-locale container the print raised `UnicodeEncodeError` *out of the handler*, turning a successful request into a 500 | `main.py` forces stdout/stderr to UTF-8 with lossy fallback; Dockerfile sets `PYTHONUTF8=1` |
+| Unhandled errors (e.g. a stale database schema) inside `/projects` | Starlette answers an escaped exception from the outermost `ServerErrorMiddleware`, which sits **above** the CORS middleware: the bare 500 carries no `Access-Control-Allow-Origin`, so the browser reports "blocked by CORS policy" and hides the real reason. A pre-existing database missing a column the model now expects is the usual trigger, because `create_all` adds tables, never columns | The DB-touching routes (`/projects`, `/projects/{id}`, `/generate`, `/files/{id}`, `/stream/{id}`) catch `SQLAlchemyError` and answer a readable JSON 500 *through* the CORS layer; the full traceback is logged as `DATABASE ERROR <route>:`. `migrations/ensure_schema.py` adds every missing column at once |
 
 ### One thing that is still true
 
@@ -51,6 +52,20 @@ process per connection and exhausts Neon's limit under a web app's churn.
 `create_all` runs at import, so on a fresh Neon database the schema appears on
 first boot. Verified: 8 tables, including `generated_files.contents`.
 
+**One catch: `create_all` adds missing *tables*, never missing *columns*.** If
+a model gained a column after the database already existed, the live table keeps
+its old shape and the first query that selects the new column raises
+`column ... does not exist`. On the deployed backend that used to surface in the
+browser as an opaque CORS block (the 500 escaped the CORS middleware - see the
+table above). If that happens after a model change, run:
+
+```
+python migrations/ensure_schema.py
+```
+
+with `DATABASE_URL` pointing at the affected database. It is add-only and
+idempotent, so it is safe to re-run.
+
 **Local data has been migrated and verified**: 737 rows across all 8 tables,
 confirmed by a per-table md5 over every column, not just row counts. Re-check
 anytime without recopying:
@@ -77,7 +92,7 @@ access to every user's data, which also means any JWT in circulation is moot.
 ```
 DATABASE_URL="postgresql://...-pooler.<region>.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 SECRET_KEY="<python -c 'import secrets;print(secrets.token_urlsafe(48))'>"
-CORS_ORIGINS="http://localhost:5173,http://127.0.0.1:5173,https://ai-os-2-7pt8.onrender.com"
+CORS_ORIGINS="http://localhost:5173,http://127.0.0.1:5173,https://ai-os-2-7pt8.onrender.com,https://ai-os-qxzd.vercel.app"
 DB_ECHO=false
 ```
 
@@ -141,6 +156,47 @@ which is unaffected, so split-domain is fine today.
 
 ---
 
+## Troubleshooting
+
+### "Blocked by CORS policy" in the browser console, status 500
+
+That is a **server error wearing a CORS costume**. Starlette answers an
+exception that escaped a route handler from the outermost `ServerErrorMiddleware`
+layer, which sits above the CORS middleware, so the bare `500 Internal Server
+Error` carries no `Access-Control-Allow-Origin` and the browser refuses to show
+its body. The request itself reached the API - check the API's logs.
+
+Since the fix, DB failures in the main routes no longer escape: they answer a
+readable JSON 500 that the frontend *can* read, and the logs carry the full
+traceback under `DATABASE ERROR <route>:`. To reproduce from a shell:
+
+```
+curl -i -H "Origin: https://ai-os-qxzd.vercel.app" https://ai-os-2-7pt8.onrender.com/projects
+```
+
+- `401` + `Access-Control-Allow-Origin` → CORS is healthy; the earlier 500 was a
+  backend fault (read the detail, check the logs, run `ensure_schema.py` if the
+  error names a missing column).
+- `500` + JSON `detail` starting with `Database error during ...` → the exact
+  failure is in that body and in the logs.
+- No `Access-Control-Allow-Origin` at all → see below.
+
+### "Blocked by CORS policy" on every request, even 200s
+
+`CORS_ORIGINS` does not include the frontend origin. In deployment only the
+`CORS_ORIGINS` env var on the host matters (`.env` is gitignored and kept out of
+the image by `.dockerignore`). It must contain the live origin, e.g.
+`https://ai-os-qxzd.vercel.app`, comma-separated with any others. Update it on
+the host and redeploy.
+
+### `/health` says `database: down`
+
+The API process is up but cannot reach or authenticate to the database: check
+`DATABASE_URL` (pooled host, password, `sslmode=require`), and that the host can
+reach Neon (VPC/private networking restrictions are the usual surprise).
+
+---
+
 ## Helper scripts
 
 | Script | Purpose |
@@ -148,6 +204,7 @@ which is unaffected, so split-domain is fine today.
 | `verify_setup.py` | Asserts env, pool settings, Neon schema and routes |
 | `test_deploy_e2e.py` | Health, auth, forged-token refusal, and the database-only file read |
 | `migrations/add_generated_file_contents.py` | `create_all` adds tables, never columns. Run once against any **pre-existing** database (e.g. local `ai_company_os`) to add the column |
+| `migrations/ensure_schema.py` | The general form of the above: compares the live schema against `database.models` and adds **every** missing column, add-only and idempotent. Run after any model change against a pre-existing database |
 | `migrations/backfill_file_contents.py` | Fills `contents` for rows written before the column existed, reading from local disk |
 | `migrations/copy_local_to_target.py` | Copies every row from local Postgres into `DATABASE_URL`, FK-safe order, sequences reset. Add `--verify-only` to compare source and target without writing |
 | `fix_requirements_encoding.py` | Re-runnable UTF-16 to UTF-8 guard for `requirements.txt` |
