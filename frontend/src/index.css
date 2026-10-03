@@ -899,6 +899,10 @@ html[data-theme="light"] [class*="text-violet-"] {
     color: #5f982b;
 }
 
+html[data-theme="light"] .progress-ring-label {
+    color: #34432e;
+}
+
 html[data-theme="light"] [class*="bg-black/"],
 html[data-theme="light"] [class*="bg-gray-950"] {
     background-color: #ffffff;

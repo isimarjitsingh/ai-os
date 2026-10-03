@@ -64,7 +64,7 @@ function Ring({
             </svg>
 
             <span
-                className="absolute inset-0 flex items-center justify-center font-bold tabular-nums text-white"
+                className="progress-ring-label absolute inset-0 flex items-center justify-center font-bold tabular-nums text-white"
                 style={{ fontSize: Math.max(10, Math.round(size * 0.2)) }}
             >
                 {label ?? `${pct}%`}
