@@ -165,30 +165,30 @@ function AuthShell({ eyebrow, title, subtitle, children, footer }) {
             </div>
 
             {/* ---------- Form panel: light card ---------- */}
-            <div className="auth-form-panel flex items-center justify-center bg-[#f7f7fb] p-4 sm:p-6">
-                <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
+            <div className="auth-form-panel flex items-center justify-center p-4 sm:p-6">
+                <div className="auth-card w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-xl sm:p-8">
                     <Link to="/" className="mb-6 flex items-center justify-center gap-3 lg:hidden">
                         <span className="brand-gradient flex h-9 w-9 items-center justify-center rounded-xl">
                             <Sparkles size={17} className="text-white" />
                         </span>
 
-                        <span className="font-bold text-slate-900">AI Company OS</span>
+                        <span className="auth-logo-text font-bold">AI Company OS</span>
                     </Link>
 
-                    <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-violet-600">
+                    <p className="auth-eyebrow text-center text-[11px] font-semibold uppercase tracking-[0.18em]">
                         {eyebrow}
                     </p>
 
-                    <h1 className="mt-3 text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                    <h1 className="auth-title mt-3 text-center text-2xl font-bold tracking-tight sm:text-3xl">
                         {title}
                     </h1>
 
-                    <p className="mt-2 text-center text-sm text-slate-500">{subtitle}</p>
+                    <p className="auth-subtitle mt-2 text-center text-sm">{subtitle}</p>
 
                     <div className="mt-6">{children}</div>
 
                     {footer && (
-                        <div className="mt-6 border-t border-slate-200 pt-5 text-center text-sm text-slate-500">
+                        <div className="auth-footer mt-6 border-t border-slate-200 pt-5 text-center text-sm">
                             {footer}
                         </div>
                     )}
