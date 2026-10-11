@@ -1,4 +1,5 @@
 from services.workflow_manager import workflow_manager
+from agents.tracker import record
 
 
 def emit_running(state: dict, agent: str):
@@ -15,6 +16,8 @@ def emit_running(state: dict, agent: str):
             status="running"
         )
 
+    record(agent, "running")
+
 
 def emit_completed(state: dict, agent: str, output=None):
 
@@ -30,3 +33,5 @@ def emit_completed(state: dict, agent: str, output=None):
             status="completed",
             output=output
         )
+
+    record(agent, "completed", output)

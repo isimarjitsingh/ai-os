@@ -98,9 +98,13 @@ export async function getProjectFiles(threadId) {
 }
 
 /* ==========================================================
-    API KEYS
-    Saved per-provider in the backend settings store.
+    AGENTS
+    Real-time analytics + status.
    ========================================================== */
+
+export async function getAgentsStatus() {
+    return request("/agents/status")
+}
 
 export async function getApiKeys() {
     return request("/settings/keys")

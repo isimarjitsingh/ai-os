@@ -2,25 +2,14 @@ import { useState } from "react";
 import {
     Settings as SettingsIcon,
     UserRound,
-    KeyRound,
-    Database,
-    CreditCard,
-    Users,
-    Bell,
-    ShieldCheck,
-    Monitor,
-    Sun,
-    Moon,
-    RefreshCw,
     LogOut,
+    Mail,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import Switch from "../components/ui/Switch";
 import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../services/config";
 import { applyTheme, readPrefs, writePrefs } from "../lib/prefs";
-import { INDUSTRIES, PROJECT_TYPES } from "../lib/industries";
 import { formatDate, initials } from "../lib/format";
 import { cn } from "../lib/cn";
 
@@ -38,12 +27,6 @@ import { cn } from "../lib/cn";
 const TABS = [
     { id: "general", label: "General", icon: SettingsIcon },
     { id: "profile", label: "Profile", icon: UserRound },
-    { id: "keys", label: "API Keys", icon: KeyRound },
-    { id: "integrations", label: "Integrations", icon: Database },
-    { id: "billing", label: "Billing", icon: CreditCard },
-    { id: "team", label: "Team", icon: Users },
-    { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "security", label: "Security", icon: ShieldCheck },
 ];
 
 /* ---------------- shared bits ---------------- */
@@ -447,12 +430,14 @@ function PlanRow({ row }) {
 
 /* ---------------- Account tabs ---------------- */
 
-function ProfileSection({ user, onRefresh, refreshing }) {
+function ProfileSection({ user, onRefresh, refreshing, onLogout }) {
+    const [email, setEmail] = useState(user?.email || "");
+
     return (
         <section className="space-y-6">
             <SectionHeader
                 title="Profile"
-                hint="Served by GET /auth/me. Read-only until a profile-update endpoint exists."
+                hint="Personal information and session controls."
             />
 
             <div className="flex flex-wrap items-center gap-5 rounded-2xl border border-[var(--color-line)] bg-white/[0.02] p-5">
@@ -484,95 +469,34 @@ function ProfileSection({ user, onRefresh, refreshing }) {
                 <ReadOnlyRow label="User ID" value={user?.id} mono />
                 <ReadOnlyRow label="Member since" value={formatDate(user?.created_at)} />
                 <ReadOnlyRow label="Display name" value={user?.name} />
+
+                <div className="mt-2 flex items-center gap-2">
+                    <Mail size={16} className="text-slate-500" />
+                    <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Gmail address"
+                        className="flex-1 rounded-lg border border-[var(--color-line)] bg-transparent px-3 py-1.5 text-sm text-slate-200 outline-none focus:border-violet-500"
+                    />
+                </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-line)] bg-white/[0.02] p-5">
+                <p className="flex items-center gap-2 text-xs text-slate-500">
+                    <ShieldCheck size={14} className="text-emerald-400" />
+                    Sessions expire after 24 hours
+                </p>
+
+                <button
+                    onClick={onLogout}
+                    className="inline-flex items-center gap-2 rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20"
+                >
+                    <LogOut size={14} />
+                    Log out
+                </button>
             </div>
         </section>
-    );
-}
-
-function NotificationsSection({ draft, set }) {
-    return (
-        <section className="space-y-5">
-            <SectionHeader
-                title="Notifications"
-                hint="Stored on this device and applied by the live workflow screen."
-            />
-
-            <div className="rounded-2xl border border-[var(--color-line)] bg-white/[0.02] px-4">
-                <ToggleRow
-                    title="Workflow updates"
-                    hint="Show live progress while agents are executing."
-                    checked={draft.notifyWorkflow}
-                    onChange={(next) => set("notifyWorkflow", next)}
-                />
-
-                <ToggleRow
-                    title="Email summaries"
-                    hint="Send a report digest when a run finishes."
-                    checked={draft.notifyEmail}
-                    onChange={(next) => set("notifyEmail", next)}
-                />
-
-                <ToggleRow
-                    title="Product news"
-                    hint="Occasional notes about new agents and capabilities."
-                    checked={draft.notifyProduct}
-                    onChange={(next) => set("notifyProduct", next)}
-                />
-            </div>
-        </section>
-    );
-}
-
-function SecuritySection({ token, user, onLogout, apiBase }) {
-    return (
-        <>
-            <section className="space-y-5">
-                <SectionHeader title="Security" hint="Session and platform configuration." />
-
-                <div className="rounded-2xl border border-[var(--color-line)] bg-white/[0.02] px-5 py-2">
-                    <ReadOnlyRow label="Status" value={token ? "Authenticated" : "Signed out"} />
-                    <ReadOnlyRow
-                        label="Token"
-                        value={token ? `${token.slice(0, 18)}…${token.slice(-8)}` : "—"}
-                        mono
-                    />
-                    <ReadOnlyRow label="API base URL" value={apiBase} mono />
-                    <ReadOnlyRow
-                        label="Config source"
-                        value="frontend/.env → VITE_API_URL"
-                        mono
-                    />
-                    <ReadOnlyRow label="Workflow transport" value="Server-Sent Events (SSE)" />
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[var(--color-line)] bg-white/[0.02] p-5">
-                    <p className="flex items-center gap-2 text-xs text-slate-500">
-                        <ShieldCheck size={14} className="text-emerald-400" />
-                        Sessions expire after 24 hours
-                    </p>
-
-                    <button
-                        onClick={onLogout}
-                        className="inline-flex items-center gap-2 rounded-xl border border-red-400/25 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20"
-                    >
-                        <LogOut size={14} />
-                        Log out
-                    </button>
-                </div>
-            </section>
-
-            <section className="space-y-5">
-                <SectionHeader
-                    title="Access"
-                    hint="Projects, reports and files are scoped to this account."
-                />
-
-                <div className="rounded-2xl border border-[var(--color-line)] bg-white/[0.02] px-5 py-2">
-                    <ReadOnlyRow label="Signed in as" value={user?.email || user?.name} />
-                    <ReadOnlyRow label="Seats used" value="1 of 1" />
-                </div>
-            </section>
-        </>
     );
 }
 
@@ -611,60 +535,8 @@ function Settings() {
 
     const panels = {
         general: <GeneralSection draft={draft} set={set} />,
-
         profile: (
-            <ProfileSection user={user} onRefresh={handleRefresh} refreshing={refreshing} />
-        ),
-
-        keys: (
-            <RosterSection
-                title="Model providers"
-                hint="Keys live in Backend/.env on the server — the browser never receives them."
-                rows={PROVIDERS}
-                render={(row) => <ProviderRow row={row} />}
-            />
-        ),
-
-        integrations: (
-            <RosterSection
-                title="Integrations"
-                hint="What the platform is wired to right now."
-                rows={INTEGRATIONS}
-                render={(row) => (
-                    <>
-                        <div className="min-w-0">
-                            <p className="text-sm font-semibold text-slate-100">{row.name}</p>
-                            <p className="mt-1 text-xs text-slate-500">{row.scope}</p>
-                        </div>
-
-                        <StateChip state={row.state} />
-                    </>
-                )}
-            />
-        ),
-
-        billing: (
-            <RosterSection
-                title="Plans"
-                hint="No payment provider is connected yet — these are the published tiers."
-                rows={PLANS}
-                render={(row) => <PlanRow row={row} />}
-            />
-        ),
-
-        team: (
-            <RosterSection
-                title="Team"
-                hint="Single-seat workspace until team endpoints land."
-                rows={MEMBERS}
-                render={(row) => <MemberRow row={row} email={user?.email} />}
-            />
-        ),
-
-        notifications: <NotificationsSection draft={draft} set={set} />,
-
-        security: (
-            <SecuritySection token={token} user={user} onLogout={logout} apiBase={API_URL} />
+            <ProfileSection user={user} onRefresh={handleRefresh} refreshing={refreshing} onLogout={logout} />
         ),
     };
 

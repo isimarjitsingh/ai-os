@@ -62,6 +62,7 @@ from auth.dependencies import get_current_user
 from routes.auth import router as auth_router
 from routes.files import router as files_router
 from routes.settings import router as settings_router
+from routes.agents import router as agents_router
 from pathlib import Path
 
 
@@ -292,6 +293,10 @@ app.include_router(
 
 app.include_router(
     settings_router
+)
+
+app.include_router(
+    agents_router
 )
 
 

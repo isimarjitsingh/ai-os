@@ -1,24 +1,7 @@
-import {
-    Brain,
-    Search,
-    Megaphone,
-    DollarSign,
-    Code2,
-    FolderGit2,
-} from "lucide-react";
+import { Brain, Search, Megaphone, DollarSign, Code2, FolderGit2 } from "lucide-react";
+import { getAgentsStatus } from "../services/api";
 
-/* ==========================================================
-   AGENT REGISTRY
-
-   Mirrors the real graph in Backend/graphs/company_graph.py:
-   ceo -> research -> marketing -> finance -> coding
-   -> file_generator -> ceo_finalize
-
-   Every agent emits SSE events as:
-   { agent, status, output }
-========================================================== */
-
-export const AGENTS = [
+export const AGENT_REGISTRY = [
     {
         id: "ceo",
         name: "CEO Agent",
@@ -26,13 +9,7 @@ export const AGENTS = [
         icon: Brain,
         tint: "violet",
         accent: "#7c5cff",
-        status: "active",
-        progress: 92,
-        tasks: 128,
-        avgRuntime: "1m 12s",
-        successRate: 99,
-        blurb:
-            "Reads your idea, decides which departments are needed, and writes the final executive verdict.",
+        blurb: "Reads your idea, decides which departments are needed, and writes the final executive verdict.",
         output: "Execution plan · Executive summary",
     },
     {
@@ -42,13 +19,7 @@ export const AGENTS = [
         icon: Search,
         tint: "cyan",
         accent: "#22d3ee",
-        status: "active",
-        progress: 76,
-        tasks: 112,
-        avgRuntime: "2m 04s",
-        successRate: 97,
-        blurb:
-            "Analyses the market, audience, competitors, feature set, opportunities and risks.",
+        blurb: "Analyses the market, audience, competitors, feature set, opportunities and risks.",
         output: "Research report",
     },
     {
@@ -58,13 +29,7 @@ export const AGENTS = [
         icon: Megaphone,
         tint: "pink",
         accent: "#f472b6",
-        status: "idle",
-        progress: 48,
-        tasks: 64,
-        avgRuntime: "1m 38s",
-        successRate: 95,
-        blurb:
-            "Builds positioning, launch strategy, channel plan, content ideas and growth KPIs.",
+        blurb: "Builds positioning, launch strategy, channel plan, content ideas and growth KPIs.",
         output: "Marketing report",
     },
     {
@@ -74,13 +39,7 @@ export const AGENTS = [
         icon: DollarSign,
         tint: "emerald",
         accent: "#34d399",
-        status: "idle",
-        progress: 35,
-        tasks: 51,
-        avgRuntime: "1m 21s",
-        successRate: 96,
-        blurb:
-            "Models startup and monthly costs, revenue streams, pricing and break-even.",
+        blurb: "Models startup and monthly costs, revenue streams, pricing and break-even.",
         output: "Finance model",
     },
     {
@@ -90,13 +49,7 @@ export const AGENTS = [
         icon: Code2,
         tint: "sky",
         accent: "#38bdf8",
-        status: "active",
-        progress: 81,
-        tasks: 97,
-        avgRuntime: "3m 47s",
-        successRate: 93,
-        blurb:
-            "Designs the architecture, tech stack, database schema and API endpoint contract.",
+        blurb: "Designs the architecture, tech stack, database schema and API endpoint contract.",
         output: "Technical blueprint",
     },
     {
@@ -106,90 +59,65 @@ export const AGENTS = [
         icon: FolderGit2,
         tint: "amber",
         accent: "#fbbf24",
-        status: "offline",
-        progress: 12,
-        tasks: 43,
-        avgRuntime: "4m 26s",
-        successRate: 91,
-        blurb:
-            "Writes the actual project files to disk so they can be browsed and previewed live.",
+        blurb: "Writes the actual project files to disk so they can be browsed and previewed live.",
         output: "Generated project files",
     },
 ];
 
-/* ==========================================================
-    Derived roster totals — computed from AGENTS so the stat
-    row can never drift from the cards below it.
-========================================================== */
+const REGISTRY_BY_ID = Object.fromEntries(AGENT_REGISTRY.map((a) => [a.id, a]));
 
-export const AGENT_TOTALS = AGENTS.reduce(
-    (acc, agent) => {
+const DUMMY_AGENTS = AGENT_REGISTRY.map((base) => ({
+    ...base,
+    status: "offline",
+    progress: 0,
+    tasks: 0,
+    avgRuntime: "0m 00s",
+    successRate: 0,
+}));
+
+export async function fetchRealAgents() {
+    try {
+        const data = await getAgentsStatus();
+        if (!data?.agents) return DUMMY_AGENTS;
+        return data.agents.map((backend) => {
+            const base = REGISTRY_BY_ID[backend.agent];
+            if (!base) return null;
+            const seconds = backend.avg_runtime_seconds || 0;
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return {
+                ...base,
+                status: backend.status === "active" ? "active" : backend.status === "idle" ? "idle" : "offline",
+                progress: backend.progress ?? 0,
+                tasks: backend.tasks_completed ?? 0,
+                avgRuntime: `${mins}m ${String(secs).padStart(2, "0")}s`,
+                successRate: backend.success_rate ?? 0,
+            };
+        }).filter(Boolean);
+    } catch {
+        return DUMMY_AGENTS;
+    }
+}
+
+export function computeTotals(agents) {
+    return agents.reduce((acc, agent) => {
         acc.total += 1;
         if (agent.status === "active") acc.active += 1;
         if (agent.status === "idle") acc.idle += 1;
         if (agent.status === "offline") acc.offline += 1;
         return acc;
-    },
-    { total: 0, active: 0, idle: 0, offline: 0 }
-);
-
-
-export const AGENT_BY_ID = Object.fromEntries(
-    AGENTS.map((agent) => [agent.id, agent])
-);
-
-export const AGENT_IDS = AGENTS.map((agent) => agent.id);
-
-export function getAgent(id) {
-    return AGENT_BY_ID[id] || null;
+    }, { total: 0, active: 0, idle: 0, offline: 0 });
 }
 
-/* ==========================================================
-   TINT MAP
-   Tailwind class strings are written in full so the
-   v4 scanner can see them (never build class names at runtime).
-========================================================== */
-
-export const TINTS = {
-    violet: {
-        icon: "text-violet-300",
-        bg: "bg-violet-500/10",
-        ring: "ring-violet-400/30",
-        bar: "from-violet-500 to-indigo-500",
-    },
-    cyan: {
-        icon: "text-cyan-300",
-        bg: "bg-cyan-500/10",
-        ring: "ring-cyan-400/30",
-        bar: "from-cyan-400 to-sky-500",
-    },
-    pink: {
-        icon: "text-pink-300",
-        bg: "bg-pink-500/10",
-        ring: "ring-pink-400/30",
-        bar: "from-pink-500 to-rose-500",
-    },
-    emerald: {
-        icon: "text-emerald-300",
-        bg: "bg-emerald-500/10",
-        ring: "ring-emerald-400/30",
-        bar: "from-emerald-400 to-teal-500",
-    },
-    sky: {
-        icon: "text-sky-300",
-        bg: "bg-sky-500/10",
-        ring: "ring-sky-400/30",
-        bar: "from-sky-400 to-indigo-500",
-    },
-    amber: {
-        icon: "text-amber-300",
-        bg: "bg-amber-500/10",
-        ring: "ring-amber-400/30",
-        bar: "from-amber-400 to-orange-500",
-    },
-};
-
 export function tintOf(agentId) {
-    const agent = getAgent(agentId);
+    const agent = REGISTRY_BY_ID[agentId] || null;
+    const TINTS = {
+        violet: { icon: "text-violet-300", bg: "bg-violet-500/10", ring: "ring-violet-400/30", bar: "from-violet-500 to-indigo-500" },
+        cyan: { icon: "text-cyan-300", bg: "bg-cyan-500/10", ring: "ring-cyan-400/30", bar: "from-cyan-400 to-sky-500" },
+        pink: { icon: "text-pink-300", bg: "bg-pink-500/10", ring: "ring-pink-400/30", bar: "from-pink-500 to-rose-500" },
+        emerald: { icon: "text-emerald-300", bg: "bg-emerald-500/10", ring: "ring-emerald-400/30", bar: "from-emerald-400 to-teal-500" },
+        sky: { icon: "text-sky-300", bg: "bg-sky-500/10", ring: "ring-sky-400/30", bar: "from-sky-400 to-indigo-500" },
+        amber: { icon: "text-amber-300", bg: "bg-amber-500/10", ring: "ring-amber-400/30", bar: "from-amber-400 to-orange-500" },
+    };
     return TINTS[agent?.tint] || TINTS.violet;
 }

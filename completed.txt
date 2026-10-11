@@ -1,0 +1,16 @@
+Task completed: Settings.jsx modified as requested
+
+Changes made:
+1. Removed apikeys/integrations/billings/team/notifications/security sections
+2. Added personal info profile page with gmail input field
+3. Added logout button to profile section
+4. Updated TABS array to only show General and Profile tabs
+5. Updated panels object to only render GeneralSection and ProfileSection
+6. Removed unused component functions (NotificationsSection, SecuritySection)
+7. Removed unused imports (KeyRound, Database, CreditCard, Users, Bell, ShieldCheck, Monitor, Sun, Moon, RefreshCw)
+8. Kept theme-related imports (Sun, Moon, Monitor) as they're used in THEME_CARDS
+
+Final state:
+- Two tabs: General and Profile
+- Profile section contains: gmail input field, logout button, user info display
+- General section unchanged with workspace and appearance settings

@@ -1,0 +1,44 @@
+SETTINGS.JSX MODIFICATION - COMPLETE
+
+Goal: Modify Settings page - remove apikeys/integrations/billings/team/notifications/security sections, add personal info profile page with gmail and logout.
+
+STATUS: COMPLETE
+
+CHANGES SUMMARY:
+
+1. REMOVED SECTIONS (6 total):
+   - API Keys (keys tab + RosterSection with providers)
+   - Integrations (integrations tab + RosterSection)
+   - Billing (billing tab + RosterSection with plans)
+   - Team (team tab + RosterSection with members)
+   - Notifications (notifications tab + NotificationsSection component)
+   - Security (security tab + SecuritySection component)
+
+2. PROFILE SECTION ENHANCEMENTS:
+   - Added gmail input field (type="email", placeholder="Gmail address")
+   - Added logout button (onClick={onLogout})
+   - Updated hint text to "Personal information and session controls."
+   - Added session expiration notice (24 hours)
+
+3. NAVIGATION TABS (updated):
+   - Before: general, keys, integrations, billing, team, notifications, security
+   - After: general, profile
+
+4. CODE CLEANUP:
+   - Removed 10 unused icon imports from lucide-react
+   - Removed 6 section component functions
+   - Kept theme-related icons (Sun, Moon, Monitor) used in THEME_CARDS
+   - Kept: SettingsIcon, UserRound, LogOut, Mail
+
+5. SETTINGS FUNCTION UPDATES:
+   - Passes onLogout prop to ProfileSection
+   - Updated panels object to only include general and profile
+
+FILES MODIFIED:
+- c:\Users\simarjit singh\OneDrive\Desktop\tester\ai-os\frontend\src\pages\Settings.jsx
+
+VERIFICATION:
+- ✅ No references to removed sections (keys, integrations, billing, team, notifications, security) in TABS or panels
+- ✅ ProfileSection contains gmail input and logout button
+- ✅ Two tabs only: General and Profile
+- ✅ General section remains functional with workspace and appearance settings
