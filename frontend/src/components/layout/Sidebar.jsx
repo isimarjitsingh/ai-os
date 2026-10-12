@@ -116,7 +116,7 @@ function Sidebar({ open = false, onClose = () => {} }) {
 
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold tracking-tight text-slate-100">
-                            AI Company OS
+                            AgentFork
                         </p>
                         <p className="section-label mt-0.5 truncate">
                             Build smarter together
@@ -178,7 +178,7 @@ function Sidebar({ open = false, onClose = () => {} }) {
                             className="mt-3.5 flex w-full items-center justify-center gap-1.5 rounded-lg border border-violet-400/25 bg-violet-500/10 px-3 py-2 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/20"
                         >
                             <Sparkles size={13} />
-                            Upgrade plan
+                            
                         </NavLink>
                     </div>
                 </div>

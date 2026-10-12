@@ -91,7 +91,7 @@ export function pageMeta(pathname, user) {
 
     if (pathname.startsWith("/project/")) return { ...FALLBACK };
 
-    return { title: "AI Company OS", description: "Autonomous startup platform" };
+    return { title: "AgentFork", description: "Autonomous startup platform" };
 }
 
 export default PAGE_META;

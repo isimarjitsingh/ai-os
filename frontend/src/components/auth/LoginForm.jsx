@@ -79,7 +79,7 @@ function LoginForm() {
         <AuthShell
             eyebrow="Welcome back"
             title="Welcome back"
-            subtitle="Sign in to your AI Company OS account"
+            subtitle="Sign in to your AgentFork account"
             footer={
                 <>
                     Don&apos;t have an account?{" "}

@@ -52,7 +52,7 @@ function AuthShell({ eyebrow, title, subtitle, children, footer }) {
                             </span>
 
                             <span className="text-lg font-bold tracking-tight text-slate-100">
-                                AI Company OS
+                                AgentFork
                             </span>
                         </Link>
 
@@ -172,7 +172,7 @@ function AuthShell({ eyebrow, title, subtitle, children, footer }) {
                             <Sparkles size={17} className="text-white" />
                         </span>
 
-                        <span className="auth-logo-text font-bold">AI Company OS</span>
+                        <span className="auth-logo-text font-bold">AgentFork</span>
                     </Link>
 
                     <p className="auth-eyebrow text-center text-[11px] font-semibold uppercase tracking-[0.18em]">

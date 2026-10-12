@@ -11,7 +11,7 @@ const KEY = "ai-os.prefs.v1";
 
 const DEFAULTS = {
     theme: "dark",
-    workspaceName: "AI Company OS",
+    workspaceName: "AgentFork",
     workspaceUrl: "my-workspace",
     workspaceDescription: "",
     defaultIndustry: "SaaS",

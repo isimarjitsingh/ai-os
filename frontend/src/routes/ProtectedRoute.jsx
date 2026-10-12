@@ -16,7 +16,7 @@ function Splash() {
 
             <div className="text-center">
                 <p className="text-sm font-semibold text-slate-300">
-                    AI Company OS
+                    AgentFork
                 </p>
                 <p className="mt-1 text-xs text-slate-500">Restoring your session…</p>
             </div>
