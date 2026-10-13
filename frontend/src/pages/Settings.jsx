@@ -4,6 +4,8 @@ import {
     UserRound,
     LogOut,
     Mail,
+    Sun,
+    Moon,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
