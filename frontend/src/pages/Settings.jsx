@@ -6,6 +6,7 @@ import {
     Mail,
     Sun,
     Moon,
+    Monitor,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
