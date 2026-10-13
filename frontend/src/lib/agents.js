@@ -127,3 +127,18 @@ export function getAgent(agentId) {
 }
 
 export const AGENT_BY_ID = REGISTRY_BY_ID;
+
+export const AGENTS = AGENT_REGISTRY;
+
+export const AGENT_TOTALS = computeTotals;
+
+export const AGENT_IDS = AGENT_REGISTRY.map((a) => a.id);
+
+export const TINTS = {
+    violet: { icon: "text-violet-300", bg: "bg-violet-500/10", ring: "ring-violet-400/30", bar: "from-violet-500 to-indigo-500" },
+    cyan: { icon: "text-cyan-300", bg: "bg-cyan-500/10", ring: "ring-cyan-400/30", bar: "from-cyan-400 to-sky-500" },
+    pink: { icon: "text-pink-300", bg: "bg-pink-500/10", ring: "ring-pink-400/30", bar: "from-pink-500 to-rose-500" },
+    emerald: { icon: "text-emerald-300", bg: "bg-emerald-500/10", ring: "ring-emerald-400/30", bar: "from-emerald-400 to-teal-500" },
+    sky: { icon: "text-sky-300", bg: "bg-sky-500/10", ring: "ring-sky-400/30", bar: "from-sky-400 to-indigo-500" },
+    amber: { icon: "text-amber-300", bg: "bg-amber-500/10", ring: "ring-amber-400/30", bar: "from-amber-400 to-orange-500" },
+};
