@@ -121,3 +121,7 @@ export function tintOf(agentId) {
     };
     return TINTS[agent?.tint] || TINTS.violet;
 }
+
+export function getAgent(agentId) {
+    return REGISTRY_BY_ID[agentId] || null;
+}
