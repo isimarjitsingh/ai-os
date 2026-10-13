@@ -125,3 +125,5 @@ export function tintOf(agentId) {
 export function getAgent(agentId) {
     return REGISTRY_BY_ID[agentId] || null;
 }
+
+export const AGENT_BY_ID = REGISTRY_BY_ID;
