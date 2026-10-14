@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "AI Company OS",
+  "version": "1.0.0",
+  "description": "AI Company OS - Multi-agent startup builder",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'inline-speculation-rules' chrome-extension://81b1c00d-37c7-42b2-b500-0a828898e696/"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
