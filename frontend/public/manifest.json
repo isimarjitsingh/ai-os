@@ -9,7 +9,7 @@
     "scripting"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules'"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval' 'inline-speculation-rules' 'unsafe-eval'"
   },
   "background": {
     "service_worker": "background.js"

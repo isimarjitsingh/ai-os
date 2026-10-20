@@ -14,7 +14,9 @@ import { useAuth } from "../context/AuthContext";
 import { API_URL } from "../services/config";
 import { applyTheme, readPrefs, writePrefs } from "../lib/prefs";
 import { formatDate, initials } from "../lib/format";
+import { INDUSTRIES, PROJECT_TYPES } from "../lib/industries";
 import { cn } from "../lib/cn";
+import Switch from "../components/ui/Switch";
 
 /* ==========================================================
    Settings — two-column tab settings page.
@@ -434,6 +436,11 @@ function PlanRow({ row }) {
 /* ---------------- Account tabs ---------------- */
 
 function ProfileSection({ user, onRefresh, refreshing, onLogout }) {
+    const RefreshCw = () => {
+        onRefresh?.();
+        setRefreshing(true);
+        setTimeout(() => setRefreshing(false), 1000);
+    };
     const [email, setEmail] = useState(user?.email || "");
 
     return (

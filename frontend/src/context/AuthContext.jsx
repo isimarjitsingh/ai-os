@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
     const [token, setToken] = useState(() => getToken());
     const [user, setUser] = useState(() => getStoredUser());
     const [initializing, setInitializing] = useState(Boolean(getToken()));
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState(null);
 
     /* Re-validate the session once on mount */
     useEffect(() => {
