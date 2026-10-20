@@ -29,6 +29,7 @@ export function AuthProvider({ children }) {
     const [token, setToken] = useState(() => getToken());
     const [user, setUser] = useState(() => getStoredUser());
     const [initializing, setInitializing] = useState(Boolean(getToken()));
+    const [error, setError] = useState<string | null>(null);
 
     /* Re-validate the session once on mount */
     useEffect(() => {
@@ -47,13 +48,19 @@ export function AuthProvider({ children }) {
                 if (fresh) {
                     setUser(fresh);
                     setStoredUser(fresh);
+                } else {
+                    // User not found on server, clear stale session
+                    clearSession();
+                    setToken(null);
+                    setUser(null);
                 }
-            } catch {
+            } catch (err) {
                 /* Token is stale or revoked — drop the session */
                 if (!cancelled) {
                     clearSession();
                     setToken(null);
                     setUser(null);
+                    setError("Session expired or invalid. Please login again.");
                 }
             } finally {
                 if (!cancelled) setInitializing(false);
@@ -105,6 +112,7 @@ export function AuthProvider({ children }) {
         login,
         logout,
         refreshUser,
+        error,
     };
 
     return (

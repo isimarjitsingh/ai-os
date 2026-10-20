@@ -132,9 +132,12 @@ def get_project_files(
             else None
         )
 
+        # Ensure directory exists (may not exist if project just generated)
+        generated_root.mkdir(parents=True, exist_ok=True)
+
         project_root_resolved = (
             project_root.resolve()
-            if project_root is not None and project_root.exists()
+            if project_root is not None
             else None
         )
 

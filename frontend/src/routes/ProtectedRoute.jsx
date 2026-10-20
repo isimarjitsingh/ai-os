@@ -25,11 +25,28 @@ function Splash() {
 }
 
 export function ProtectedRoute({ children }) {
-    const { isAuthenticated, initializing } = useAuth();
+    const { isAuthenticated, initializing, error } = useAuth();
 
     /* Wait for /auth/me validation before bouncing to login,
        otherwise a hard refresh flashes the sign-in screen. */
     if (initializing) return <Splash />;
+
+    if (error) {
+        // Show error message then redirect to login
+        return (
+            <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-8 max-w-md w-full">
+                    <p className="text-red-300 mb-4">{error}</p>
+                    <button
+                        onClick={() => window.location.href="/login"}
+                        className="btn-primary w-full mt-4"
+                    >
+                        Go to Login
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
