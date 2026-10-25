@@ -1,10 +1,82 @@
 import { WebContainer } from "@webcontainer/api";
 import { useEffect, useRef, useState } from "react";
 import { getProjectFiles } from "../../services/api";
+import { useNavigate } from "react-router-dom";
+
+// Use react-hot-toast for toast notifications
+import { toast } from "react-hot-toast";
+
+// ==========================================================
+
 
 // ==========================================================
 // WebContainer Singleton (Stored on window to survive HMR & re-renders)
 // ==========================================================
+
+async function analyzeProjectStructure(fileTree) {
+    if (isAnalyzing) return;
+    setIsAnalyzing(true);
+    setValidationResults(null);
+    setAppliedFixes([]);
+
+    try {
+        const response = await fetch("/api/preview-analyze", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                thread_id: threadId,
+                file_tree: fileTree,
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error("Analysis failed");
+        }
+
+        const result = await response.json();
+
+        setValidationResults(result.validation);
+        setAppliedFixes(result.applied_fixes || []);
+
+        // Show toast with results
+        if (!result.validation.valid) {
+            const missingFiles = result.validation.missing_mandatory || [];
+            if (missingFiles.length > 0) {
+                toast({
+                    title: "Structure Issues Found",
+                    description: `${missingFiles.length} mandatory file(s) missing. Would you like to auto-fix?`,
+                });
+            }
+        }
+
+        // Show appropriate toast
+        if (result.applied_fixes && result.applied_fixes.length > 0) {
+            toast({
+                title: "Auto-fixes applied",
+                description: `${result.applied_fixes.length} issue(s) auto-fixed`,
+            });
+        }
+
+        if (result.import_issues && result.import_issues.missing_imports?.length > 0) {
+            toast({
+                title: "Import issues detected",
+                description: `${result.import_issues.missing_imports.length} missing import(s)`,
+            });
+        }
+
+    } catch (err) {
+        console.error("[WebPreview] Analysis error:", err);
+        toast({
+            title: "Analysis failed",
+            description: err.message || "Unknown error during analysis",
+            variant: "destructive",
+        });
+    } finally {
+        setIsAnalyzing(false);
+    }
+}
 
 async function getWebContainer() {
     if (typeof window !== "undefined" && window.__webContainerInstance) {
@@ -639,6 +711,12 @@ export default function WebPreview({ threadId }) {
     const [error, setError] = useState("");
     const [logs, setLogs] = useState([]);
     const [showLogs, setShowLogs] = useState(false);
+    
+    // Preview Assistant state
+    const [showAssistant, setShowAssistant] = useState(false);
+    const [validationResults, setValidationResults] = useState(null);
+    const [appliedFixes, setAppliedFixes] = useState([]);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     const webContainerRef = useRef(null);
     const devProcessRef = useRef(null);
@@ -1050,6 +1128,37 @@ export default function WebPreview({ threadId }) {
                         <div className="flex-1 overflow-auto p-4 font-mono text-xs leading-relaxed">
                             <pre className="whitespace-pre-wrap">{logs.join("\n")}</pre>
                             <div ref={logsEndRef} />
+                        </div>
+                    </div>
+                )}
+
+                {validationResults && (
+                    <div className="border-t border-gray-800 bg-gray-950 text-gray-200 flex flex-col shadow-2xl max-w-2xl mx-4 pt-4">
+                        <div className="flex items-center justify-between border-b border-gray-800 px-4 py-2 text-xs font-medium text-gray-400">
+                            <span>Live Preview Structure Analysis</span>
+                            <button
+                                onClick={() => setShowAssistant(false)}
+                                className="text-gray-400 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            <p className="text-sm font-medium text-gray-400">Validation Status</p>
+                            <p className={validationResults.valid ? "text-green-500" : "text-red-500"} font-bold>
+                                {validationResults.valid ? "✓ Valid" : "✗ Issues Found"}
+                            </p>
+                            {!validationResults.valid && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Missing {validationResults.missing_mandatory?.length || 0} mandatory file(s)
+                                </p>
+                            )}
+                            <button
+                                onClick={() => setShowAssistant(false)}
+                                className="w-full rounded-md border border-transparent bg-violet-600 px-4 py-2 text-sm font-medium text-white mt-3 hover:bg-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
+                            >
+                                Close Analysis
+                            </button>
                         </div>
                     </div>
                 )}
