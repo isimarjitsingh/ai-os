@@ -631,14 +631,25 @@ def get_file(
 
 
         # --------------------------------------------------
-        # PHYSICAL FILE
+        # FILE CONTENT - DATABASE FIRST, DISK AS FALLBACK
         # --------------------------------------------------
 
-        path = Path(
-            file.file_path
-        )
+        path = Path(file.file_path)
 
-        if not path.exists():
+        content = None
+
+        # Try database contents first
+        db_contents = getattr(file, "contents", None)
+        if db_contents is not None:
+
+            content = db_contents
+
+        # Fall back to disk if database has no content
+        if content is None and path.exists():
+
+            content = path.read_text(encoding="utf-8")
+
+        if content is None:
 
             raise HTTPException(
 
@@ -647,11 +658,6 @@ def get_file(
                 detail="Physical file not found"
 
             )
-
-
-        content = path.read_text(
-            encoding="utf-8"
-        )
 
 
         # --------------------------------------------------
